@@ -18,7 +18,7 @@ const RequestVestingPage = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-gray-900">Request Network Vesting Contract</h1>
+      <h1 className="text-xl font-semibold text-gray-900">Zoracles Vesting Contract</h1>
       <VestingTable grants={vestingData.grants} tokens={vestingData.tokens} />
     </div>
   )
