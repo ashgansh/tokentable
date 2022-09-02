@@ -2,7 +2,7 @@ import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { getVestingData as getRequestVestingData } from "@/lib/indexer/RequestNetwork"
 import { getVestingData as getZoraclesVestingData } from "@/lib/indexer/Zoracles"
-import { getVestingData as getAlphaVestingData } from "@/lib/indexer/Alpha"
+import { getVestingData as getCurveVestingData } from "@/lib/indexer/Curve"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
@@ -25,8 +25,8 @@ const VestingDashboard = ({ contractType, contractAddress, chainId }) => {
         setVestingData(vestingData)
         return
       }
-      if (contractType === 'alpha') {
-        const vestingData = await getAlphaVestingData(chainId, contractAddress)
+      if (contractType === 'curve') {
+        const vestingData = await getCurveVestingData(chainId, contractAddress)
         setVestingData(vestingData)
         return
       }
@@ -64,6 +64,7 @@ const Home = () => {
       <ul>
         <li><Link href="/?contractType=request&contractAddress=0x45E6fF0885ebf5d616e460d14855455D92d6CC04">Request Network</Link></li>
         <li><Link href="/?contractType=zoracles&contractAddress=0x2369921551f2417d8d5cD4C1EDb1ac7eEe156380">Zoracles</Link></li>
+        <li><Link href="/?contractType=curve&contractAddress=0x2a7d59e327759acd5d11a8fb652bf4072d28ac04">Curve</Link></li>
       </ul>
     )
   }

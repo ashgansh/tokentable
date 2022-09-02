@@ -1,4 +1,6 @@
 import { formatToken } from "@/lib/utils"
+import { formatUnits } from "ethers/lib/utils"
+import TokenAmountValue from "./TokenAmountValue"
 
 const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, tokens }) => {
   const tokenFormatter = (tokenAddress, amount) => {
@@ -6,20 +8,28 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
     return formatToken(symbol, decimals, amount)
   }
 
+  const tokenFormatterUnits = (tokenAddress, amount) => {
+    const decimals = tokens?.[tokenAddress].decimals || 18
+    return formatUnits(amount, decimals)
+  }
+
   const stats = [
     {
       name: "Tokens Allocated",
-      stat: tokenFormatter(tokenAddress, totalAllocated)
+      stat: tokenFormatter(tokenAddress, totalAllocated),
+      amount: totalAllocated
     },
     {
       name: "Tokens Withdrawn",
       stat: tokenFormatter(tokenAddress, totalWithdrawn),
-      percentage: totalAllocated > 0 ? totalWithdrawn.mul(10000).div(totalAllocated).toNumber() / 100 : null
+      percentage: totalAllocated > 0 ? totalWithdrawn.mul(10000).div(totalAllocated).toNumber() / 100 : null,
+      amount: totalWithdrawn
     },
     {
       name: "Tokens Vested",
       stat: tokenFormatter(tokenAddress, totalVested),
-      percentage: totalAllocated > 0 ? totalVested.mul(10000).div(totalAllocated).toNumber() / 100 : null
+      percentage: totalAllocated > 0 ? totalVested.mul(10000).div(totalAllocated).toNumber() / 100 : null,
+      amount: totalVested
     }
   ]
 
@@ -35,6 +45,9 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
                 {item.percentage && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
               </div>
             </dd>
+              <div className="inline-flex items-baseline py-0.5 text-sm font-medium md:mt-2 lg:mt-0">
+                <TokenAmountValue tokenAddress={tokenAddress} currency="USD">{tokenFormatterUnits(tokenAddress, item.amount)}</TokenAmountValue>
+              </div>
           </div>
         ))}
       </dl>
