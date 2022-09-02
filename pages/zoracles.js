@@ -1,6 +1,6 @@
 import VestingTable from "@/components/VestingTable"
-import { REQUEST_VESTING_CONTRACT } from "@/lib/constants"
-import { getVestingData } from "@/lib/indexer/RequestNetwork"
+import { ZORACLES_VESTING_CONTRACT } from "@/lib/constants"
+import { getVestingData } from "@/lib/indexer/Zoracles"
 import { useEffect, useState } from "react"
 
 const RequestVestingPage = () => {
@@ -8,7 +8,7 @@ const RequestVestingPage = () => {
 
   useEffect(() => {
     const retrieveVestingData = async () => {
-      const vestingData = await getVestingData(1, REQUEST_VESTING_CONTRACT)
+      const vestingData = await getVestingData(1, ZORACLES_VESTING_CONTRACT)
       setVestingData(vestingData)
     }
     retrieveVestingData()
