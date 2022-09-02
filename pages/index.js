@@ -2,9 +2,11 @@ import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { getVestingData as getRequestVestingData } from "@/lib/indexer/RequestNetwork"
 import { getVestingData as getZoraclesVestingData } from "@/lib/indexer/Zoracles"
+import { getVestingData as getAlphaVestingData } from "@/lib/indexer/Alpha"
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
+import { BigNumber } from "ethers"
 
 const VestingDashboard = ({ contractType, contractAddress, chainId }) => {
   const [vestingData, setVestingData] = useState()
@@ -20,6 +22,11 @@ const VestingDashboard = ({ contractType, contractAddress, chainId }) => {
       }
       if (contractType === 'zoracles') {
         const vestingData = await getZoraclesVestingData(chainId, contractAddress)
+        setVestingData(vestingData)
+        return
+      }
+      if (contractType === 'alpha') {
+        const vestingData = await getAlphaVestingData(chainId, contractAddress)
         setVestingData(vestingData)
         return
       }
