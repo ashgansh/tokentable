@@ -9,13 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^1.6.6",
+    "@heroicons/react": "^2.0.10",
+    "@rainbow-me/rainbowkit": "^0.5.1",
     "axios": "^0.27.2",
     "ethers": "^5.7.0",
     "moment": "^2.29.4",
     "next": "12.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-moment": "^1.1.2"
+    "react-moment": "^1.1.2",
+    "wagmi": "^0.6.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.8",
