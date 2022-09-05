@@ -96,7 +96,7 @@ const Portfolio = () => (
   <div className="flex flex-col gap-4 py-4">
     {PORTFOLIO.map((item, index) => (
       <Link key={`portfolio-item-${index}`} href={`/vesting/${item.contractType}/${item.contractAddress}`}>
-        <div className="hover:cursor-pointer hover:shadow rounded-lg">
+        <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
           <PortfolioItem {...item} />
         </div>
       </Link>
