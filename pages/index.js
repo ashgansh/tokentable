@@ -8,94 +8,108 @@ import { getVestingData as getRequestVestingData } from "@/lib/indexer/RequestNe
 import { getVestingData as getZoraclesVestingData } from "@/lib/indexer/Zoracles"
 import { getVestingData as getCurveVestingData } from "@/lib/indexer/Curve"
 
-const PortfolioItem = ({contractType, contractAddress, chainId, beneficiaryAddress}) => {
+import CurveLogo from "@/public/logos/curve.svg"
+import RequestLogo from "@/public/logos/request.svg"
+import { formatToken } from "@/lib/utils"
+import { getProvider } from "@wagmi/core"
+
+const VESTING_CONTRACT_INDEXERS = {
+  request: getRequestVestingData,
+  curve: getCurveVestingData,
+  zoracles: getZoraclesVestingData,
+}
+
+const PORTFOLIO = [
+  {
+    chainId: 1,
+    contractType: "request",
+    contractAddress: "0x45E6fF0885ebf5d616e460d14855455D92d6CC04",
+    beneficiaryAddress: "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
+    companyLogo: RequestLogo,
+    companyName: "Request"
+  },
+  {
+    chainId: 1,
+    contractType: "curve",
+    contractAddress: "0x2a7d59e327759acd5d11a8fb652bf4072d28ac04",
+    beneficiaryAddress: "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
+    companyLogo: CurveLogo,
+    companyName: "Curve Finance"
+  }
+]
+
+const getPortfolio = async () => {
+  const portfolio = await Promise.all(PORTFOLIO.map(async entry => {
+    const indexer = VESTING_CONTRACT_INDEXERS[entry.contractType]
+    const vestingData = await indexer(entry.chainId, entry.contractAddress)
+    const beneficiaryGrants = vestingData?.grants?.filter(grant => grant.beneficiary === entry.beneficiaryAddress) || []
+    return {
+      ...vestingData,
+      beneficiaryGrants
+    }
+  }))
+  return portfolio.filter(entry => entry?.beneficiaryGrants?.length > 0)
+}
+
+const PortfolioItem = ({ contractType, contractAddress, chainId, beneficiaryAddress, companyName, companyLogo }) => {
   const [vestingData, setVestingData] = useState()
   const beneficiaryGrants = vestingData?.grants?.filter(grant => grant.beneficiary === beneficiaryAddress) || []
+
+  const tokenFormatter = (tokenAddress, amount, short = false) => {
+    const { symbol, decimals } = vestingData?.tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
+    return formatToken(symbol, decimals, amount, short)
+  }
 
   useEffect(() => {
     if (!contractType || !contractAddress || !chainId) return
 
     const retrieveVestingData = async () => {
-      if (contractType === 'request') {
-        const vestingData = await getRequestVestingData(chainId, contractAddress)
-        setVestingData(vestingData)
-        return
-      }
-      if (contractType === 'zoracles') {
-        const vestingData = await getZoraclesVestingData(chainId, contractAddress)
-        setVestingData(vestingData)
-        return
-      }
-      if (contractType === 'curve') {
-        const vestingData = await getCurveVestingData(chainId, contractAddress)
-        setVestingData(vestingData)
-        return
-      }
+      const indexer = VESTING_CONTRACT_INDEXERS[contractType]
+      const vestingData = await indexer(chainId, contractAddress)
+      setVestingData(vestingData)
     }
 
     retrieveVestingData()
   }, [contractType, contractAddress, chainId])
 
   return beneficiaryGrants.map((grant, index) => {
-    console.log(grant)
+    const allocationTokenFormatted = tokenFormatter(grant.tokenAddress, grant.amount, true)
     return (
-        <PortfolioCompany
-          key={index}
-          companyLogo="https://raw.githubusercontent.com/RequestNetwork/Request/master/Hubs/Request%20Logos/OnLight/svg/Request_onlight_reg_green.svg"
-          vestingStartTime={grant.startTime}
-          vestingEndTime={grant.endTime}
-          vestingCliffTime={grant.cliffTime}
-          allocationToken="150M REQ"
-          allocationUSD="$ 15M"
-          marketCapCurrent="$ 500M"
-          marketCapTGE="$ 100M"
-          circulatingSupply="900M"
-        />
+      <PortfolioCompany
+        key={index}
+        companyName={companyName}
+        companyLogo={companyLogo}
+        vestingStartTime={grant.startTime}
+        vestingEndTime={grant.endTime}
+        vestingCliffTime={grant.cliffTime}
+        allocationToken={allocationTokenFormatted}
+        allocationUSD=""
+        marketCapCurrent=""
+        marketCapTGE=""
+        circulatingSupply=""
+      />
     )
   })
 }
 
+const Portfolio = () => (
+  <div className="flex flex-col gap-4 py-4">
+    {PORTFOLIO.map((item, index) => (
+      <div key={`portfolio-item-${index}`} className="">
+        <PortfolioItem {...item} />
+      </div>
+    ))}
+  </div>
+)
+
 const Home = () => (
   <LayoutWrapper>
-    <PortfolioItem
-      contractType="request"
-      contractAddress="0x45E6fF0885ebf5d616e460d14855455D92d6CC04"
-      chainId={1}
-      beneficiaryAddress="0xF0068a27c323766B8DAF8720dF20a404Cf447727"
-    />
-    <hr className="py-4"/>
-    <hr className="py-4"/>
-    <ul>
-      <li>
-        <PortfolioCompany
-          companyLogo="https://raw.githubusercontent.com/RequestNetwork/Request/master/Hubs/Request%20Logos/OnLight/svg/Request_onlight_reg_green.svg"
-          vestingStartTime={1627768800}
-          vestingEndTime={1690840800}
-          vestingCliffTime={1627768800}
-          allocationToken="150M REQ"
-          allocationUSD="$ 15M"
-          marketCapCurrent="$ 500M"
-          marketCapTGE="$ 100M"
-          circulatingSupply="900M"
-        />
-      </li>
-      <li>
-        <PortfolioCompany
-          companyLogo="https://github.com/curvefi/curve-dao/blob/curvedao/src/assets/curve.png?raw=true"
-          vestingStartTime={1627768800}
-          vestingEndTime={1690840800}
-          vestingCliffTime={1627768800}
-          allocationToken="150M REQ"
-          allocationUSD="$ 15M"
-          marketCapCurrent="$ 500M"
-          marketCapTGE="$ 100M"
-          circulatingSupply="900M"
-        />
-      </li>
-      <li><Link href="/vesting/request/0x45E6fF0885ebf5d616e460d14855455D92d6CC04">Request Network</Link></li>
-      <li><Link href="/vesting/zoracles/0x2369921551f2417d8d5cD4C1EDb1ac7eEe156380">Zoracles</Link></li>
-      <li><Link href="/vesting/curve/0x2a7d59e327759acd5d11a8fb652bf4072d28ac04">Curve</Link></li>
-    </ul>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+      <h1 className="text-2xl font-semibold text-gray-900">Portfolio</h1>
+    </div>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+      <Portfolio />
+    </div>
   </LayoutWrapper>
 )
 

@@ -1,6 +1,7 @@
+import Image from "next/future/image"
 import Moment from "react-moment"
 
-const PortfolioCompany = ({ companyLogo, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, marketCapCurrent, marketCapTGE, circulatingSupply }) => {
+const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, marketCapCurrent, marketCapTGE, circulatingSupply }) => {
   const ItemTitle = ({ children }) => <h4 className="text-sm text-bold text-gray-900 py-2.5">{children}</h4>
 
   const now = Date.now() / 1000
@@ -10,11 +11,13 @@ const PortfolioCompany = ({ companyLogo, vestingStartTime, vestingEndTime, vesti
 
   return (
     <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
-      <div className="grid grid-rows-2 grid-cols-[repeat(4,minmax(0,1fr))] grid-flow-col gap-x-20 gap-y-4">
+      <div className="grid grid-rows-2 grid-cols-[200px_repeat(3,minmax(0,1fr))] grid-flow-col gap-x-20 gap-y-4">
         <div className="">
           <ItemTitle>Company</ItemTitle>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={companyLogo} alt="Company Logo" className="h-8" />
+          <div className="flex justify-between">
+            <span className="text-xl">{companyName}</span>
+            <Image src={companyLogo} alt="Company Logo" className="h-8 w-max" />
+          </div>
         </div>
         <div>
           <div className="flex justify-between items-center">
