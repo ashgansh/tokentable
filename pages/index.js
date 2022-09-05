@@ -95,9 +95,11 @@ const PortfolioItem = ({ contractType, contractAddress, chainId, beneficiaryAddr
 const Portfolio = () => (
   <div className="flex flex-col gap-4 py-4">
     {PORTFOLIO.map((item, index) => (
-      <div key={`portfolio-item-${index}`} className="">
-        <PortfolioItem {...item} />
-      </div>
+      <Link key={`portfolio-item-${index}`} href={`/vesting/${item.contractType}/${item.contractAddress}`}>
+        <div className="hover:cursor-pointer hover:shadow rounded-lg">
+          <PortfolioItem {...item} />
+        </div>
+      </Link>
     ))}
   </div>
 )
