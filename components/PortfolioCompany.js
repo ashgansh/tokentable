@@ -52,13 +52,13 @@ const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingE
         </div>
         <div>
           <ItemTitle>Cliff</ItemTitle>
-          <span className="text-bold text-xl block">
+          <div className="text-bold">
             {vestingCliffTime && vestingCliffTime !== vestingStartTime ? (
               <Moment unix format="YYYY-MM-DD">{vestingCliffTime}</Moment>
             ) : (
               <>None</>
             )}
-          </span>
+          </div>
         </div>
         <div>
           <ItemTitle>Chain</ItemTitle>
