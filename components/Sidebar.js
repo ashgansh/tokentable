@@ -1,14 +1,12 @@
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { HomeIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import Image from "next/future/image";
+import { RectangleStackIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 import { classNames } from '@/lib/utils'
-import Logo from "@/public/to-logo.png"
 import AccountButton from './AccountButton';
 
 const navigation = [
-  { name: 'Home', href: '/', icon: HomeIcon, current: true },
+  { name: 'Portfolio', href: '/', icon: RectangleStackIcon, current: true },
 ]
 
 const Sidebar = ({ showMobileSidebar, onClose }) => {

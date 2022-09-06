@@ -75,7 +75,7 @@ const NewPortfolio = () => {
   }, [])
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 py-4">
       {portfolioVestingGrants.map((portfolioItem, index) => {
         const { companyName, companyLogo, chainId, contractType, contractAddress } = portfolioItem.meta
         const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
