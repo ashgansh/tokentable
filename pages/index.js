@@ -10,8 +10,9 @@ import { getVestingData as getCurveVestingData } from "@/lib/indexer/Curve"
 
 import CurveLogo from "@/public/logos/curve.svg"
 import RequestLogo from "@/public/logos/request.svg"
-import { formatToken } from "@/lib/utils"
-import { getProvider } from "@wagmi/core"
+import { formatToken, nFormatter } from "@/lib/utils"
+import axios from "axios"
+import { formatUnits } from "ethers/lib/utils"
 
 const VESTING_CONTRACT_INDEXERS = {
   request: getRequestVestingData,
@@ -38,26 +39,19 @@ const PORTFOLIO = [
   }
 ]
 
-const getPortfolio = async () => {
-  const portfolio = await Promise.all(PORTFOLIO.map(async entry => {
-    const indexer = VESTING_CONTRACT_INDEXERS[entry.contractType]
-    const vestingData = await indexer(entry.chainId, entry.contractAddress)
-    const beneficiaryGrants = vestingData?.grants?.filter(grant => grant.beneficiary === entry.beneficiaryAddress) || []
-    return {
-      ...vestingData,
-      beneficiaryGrants
-    }
-  }))
-  return portfolio.filter(entry => entry?.beneficiaryGrants?.length > 0)
-}
-
 const PortfolioItem = ({ contractType, contractAddress, chainId, beneficiaryAddress, companyName, companyLogo }) => {
   const [vestingData, setVestingData] = useState()
+  const [tokenData, setTokenData] = useState()
   const beneficiaryGrants = vestingData?.grants?.filter(grant => grant.beneficiary === beneficiaryAddress) || []
 
   const tokenFormatter = (tokenAddress, amount, short = false) => {
     const { symbol, decimals } = vestingData?.tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
     return formatToken(symbol, decimals, amount, short)
+}
+
+  const tokenFormatterUnits = (tokenAddress, amount) => {
+    const decimals = vestingData?.tokens?.[tokenAddress]?.decimals || 18
+    return formatUnits(amount, decimals)
   }
 
   useEffect(() => {
@@ -68,12 +62,43 @@ const PortfolioItem = ({ contractType, contractAddress, chainId, beneficiaryAddr
       const vestingData = await indexer(chainId, contractAddress)
       setVestingData(vestingData)
     }
-
     retrieveVestingData()
   }, [contractType, contractAddress, chainId])
 
+  useEffect(() => {
+    if (!vestingData?.tokens) return
+
+    const retrieveMarketData = async () => {
+      const tokenAddresses = Object.keys(vestingData?.tokens || {})
+      const tokenMarketData = await Promise.all(
+        tokenAddresses.map(async tokenAddress => {
+          const res = await axios.get(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`)
+          const price = res.data?.market_data?.current_price?.usd
+          const marketCapCurrent = res.data?.market_data?.market_cap?.usd
+          const marketCapTGE = res.data?.ico_data?.total_raised
+          const circulatingSupply = res.data?.market_data?.circulating_supply
+
+          return {
+            tokenAddress,
+            price,
+            marketCapCurrent,
+            marketCapTGE,
+            circulatingSupply
+          }
+        })
+      )
+      setTokenData(tokenMarketData)
+    }
+
+    retrieveMarketData()
+  }, [vestingData])
+
   return beneficiaryGrants.map((grant, index) => {
+    const tokenMarketData = tokenData?.find(token => token.tokenAddress === grant.tokenAddress)
+    const circulatingSupply = nFormatter(tokenMarketData?.circulatingSupply, true)
     const allocationTokenFormatted = tokenFormatter(grant.tokenAddress, grant.amount, true)
+    const allocationUSDFormatted = `$ ${nFormatter(tokenMarketData?.price * Number(tokenFormatterUnits(grant.tokenAddress, grant.amount)), 0)}`
+
     return (
       <PortfolioCompany
         key={index}
@@ -83,10 +108,8 @@ const PortfolioItem = ({ contractType, contractAddress, chainId, beneficiaryAddr
         vestingEndTime={grant.endTime}
         vestingCliffTime={grant.cliffTime}
         allocationToken={allocationTokenFormatted}
-        allocationUSD=""
-        marketCapCurrent=""
-        marketCapTGE=""
-        circulatingSupply=""
+        allocationUSD={allocationUSDFormatted}
+        circulatingSupply={circulatingSupply}
       />
     )
   })

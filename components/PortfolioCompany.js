@@ -1,7 +1,7 @@
 import Image from "next/future/image"
 import Moment from "react-moment"
 
-const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, marketCapCurrent, marketCapTGE, circulatingSupply }) => {
+const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, circulatingSupply }) => {
   const ItemTitle = ({ children }) => <h4 className="text-sm text-bold text-gray-900 py-2.5">{children}</h4>
 
   const now = Date.now() / 1000
@@ -11,7 +11,7 @@ const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingE
 
   return (
     <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
-      <div className="grid grid-rows-2 grid-cols-[200px_repeat(3,minmax(0,1fr))] grid-flow-col gap-x-20 gap-y-4">
+      <div className="grid grid-rows-2 grid-cols-[repeat(3,minmax(0,1fr))] grid-flow-col gap-x-20 gap-y-4">
         <div className="">
           <ItemTitle>Company</ItemTitle>
           <div className="flex justify-between">
@@ -44,14 +44,6 @@ const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingE
           <ItemTitle>Allocation</ItemTitle>
           <div className="text-bold text-xl">{allocationUSD}</div>
           <div className="text-sm text-gray-500">{allocationToken}</div>
-        </div>
-        <div>
-          <ItemTitle>Market Cap (current)</ItemTitle>
-          <span className="text-bold text-xl block h-8">{marketCapCurrent}</span>
-        </div>
-        <div>
-          <ItemTitle>Market Cap (TGE)</ItemTitle>
-          <span className="text-bold text-xl block">{marketCapTGE}</span>
         </div>
         <div>
           <ItemTitle>Circulating Supply</ItemTitle>
