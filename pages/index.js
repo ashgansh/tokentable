@@ -4,33 +4,12 @@ import Link from "next/link"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import PortfolioCompany from "@/components/PortfolioCompany"
 
-import CurveLogo from "@/public/logos/curve.svg"
-import RequestLogo from "@/public/logos/request.svg"
-
 import { formatCurrency, formatAmount } from "@/lib/utils"
 import { getVestingData } from "@/lib/vesting"
 import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
+import { portfolioSelector, portfolioStore } from "@/lib/portfolio"
 
-const PORTFOLIO = [
-  {
-    chainId: 1,
-    contractType: "request",
-    contractAddress: "0x45E6fF0885ebf5d616e460d14855455D92d6CC04",
-    beneficiaryAddress: "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
-    companyLogo: RequestLogo,
-    companyName: "Request"
-  },
-  {
-    chainId: 1,
-    contractType: "curve",
-    contractAddress: "0x2a7d59e327759acd5d11a8fb652bf4072d28ac04",
-    beneficiaryAddress: "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
-    companyLogo: CurveLogo,
-    companyName: "Curve Finance"
-  }
-]
-
-const NewPortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
+const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
   const tokenFormatter = useTokenFormatter(chainId, tokenAddress)
   const tokenPrice = useTokenPrice(chainId, tokenAddress)
   const tokenCirculatingSupply = useTokenCirculatingSupply(chainId, tokenAddress)
@@ -54,7 +33,8 @@ const NewPortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffT
   )
 }
 
-const NewPortfolio = () => {
+const Portfolio = () => {
+  const portfolioItems = portfolioStore(portfolioSelector)
   const [portfolioVestingContracts, setPortfolioVestingContracts] = useState([])
   const portfolioVestingGrants = portfolioVestingContracts.reduce((grants, portfolioItem) => {
     const { vestingContract, meta } = portfolioItem
@@ -65,14 +45,14 @@ const NewPortfolio = () => {
 
   useEffect(() => {
     const retrieveVestingData = async () => {
-      const vestingContracts = PORTFOLIO.map(async (portfolioItem) => ({
+      const vestingContracts = portfolioItems.map(async (portfolioItem) => ({
         meta: portfolioItem,
         vestingContract: await getVestingData(portfolioItem.contractType, portfolioItem.chainId, portfolioItem.contractAddress)
       }))
       setPortfolioVestingContracts(await Promise.all(vestingContracts))
     }
     retrieveVestingData()
-  }, [])
+  }, [portfolioItems])
 
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -82,7 +62,7 @@ const NewPortfolio = () => {
         return (
           <Link key={`portfolio-item-${index}`} href={`/vesting/${contractType}/${contractAddress}`}>
             <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
-              <NewPortfolioItem
+              <PortfolioItem
                 key={index}
                 companyName={companyName}
                 companyLogo={companyLogo}
@@ -108,7 +88,8 @@ const Home = () => {
         <h1 className="text-2xl font-semibold text-gray-900">Portfolio</h1>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        <NewPortfolio />
+        <Portfolio />
+        <Link href="/portfolio-edit">Edit Portfolio</Link>
       </div>
     </LayoutWrapper>
   )
