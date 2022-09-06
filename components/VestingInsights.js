@@ -1,11 +1,11 @@
-import { formatToken } from "@/lib/utils"
+import { oldFormatToken } from "@/lib/utils"
 import { formatUnits } from "ethers/lib/utils"
 import TokenAmountValue from "./TokenAmountValue"
 
 const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, tokens }) => {
   const tokenFormatter = (tokenAddress, amount) => {
     const { symbol, decimals } = tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
-    return formatToken(symbol, decimals, amount)
+    return oldFormatToken(symbol, decimals, amount)
   }
 
   const tokenFormatterUnits = (tokenAddress, amount) => {

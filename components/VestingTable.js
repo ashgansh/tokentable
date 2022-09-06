@@ -1,4 +1,4 @@
-import { formatToken } from "@/lib/utils"
+import { oldFormatToken } from "@/lib/utils"
 import { Fragment } from "react"
 import Moment from "react-moment"
 
@@ -7,7 +7,7 @@ const VestingTable = ({ grants, tokens }) => {
 
   const tokenFormatter = (tokenAddress, amount) => {
     const { symbol, decimals } = tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
-    return formatToken(symbol, decimals, amount)
+    return oldFormatToken(symbol, decimals, amount)
   }
 
   const getPercentage = (numerator, denominator) => {
