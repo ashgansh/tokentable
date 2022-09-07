@@ -1,15 +1,20 @@
 import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { RectangleStackIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { DocumentChartBarIcon, RectangleStackIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 import { classNames } from '@/lib/utils'
 import AccountButton from './AccountButton';
+import { useRouter } from 'next/router';
 
 const navigation = [
-  { name: 'Portfolio', href: '/', icon: RectangleStackIcon, current: true },
+  { name: 'Portfolio', href: '/', icon: RectangleStackIcon, match: "^/vesting/[a-zA-Z0-9]*/0x[a-fA-F0-9]{40}$|/$" },
+  { name: 'Vesting Contracts', href: '/contracts', icon: DocumentChartBarIcon, current: false, match: "^/contracts$" },
 ]
 
 const Sidebar = ({ showMobileSidebar, onClose }) => {
+  const { asPath } = useRouter();
+  const path = asPath?.split("?")[0] || "";
+
   return (
     <>
       <Transition.Root show={showMobileSidebar} as={Fragment}>
@@ -62,27 +67,30 @@ const Sidebar = ({ showMobileSidebar, onClose }) => {
                     {/* <Image src={Logo} alt="Logo" className="h-8 w-auto" /> */}
                   </div>
                   <nav className="mt-5 space-y-1 px-2">
-                    {navigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className={classNames(
-                          item.current
-                            ? 'bg-gray-100 text-gray-900'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                          'group flex items-center px-2 py-2 text-base font-medium rounded-md'
-                        )}
-                      >
-                        <item.icon
+                    {navigation.map((item) => {
+                      const current = path.match(item.match)
+                      return (
+                        <a
+                          key={item.name}
+                          href={item.href}
                           className={classNames(
-                            item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                            'mr-4 flex-shrink-0 h-6 w-6'
+                            current
+                              ? 'bg-gray-100 text-gray-900'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                            'group flex items-center px-2 py-2 text-base font-medium rounded-md'
                           )}
-                          aria-hidden="true"
-                        />
-                        {item.name}
-                      </a>
-                    ))}
+                        >
+                          <item.icon
+                            className={classNames(
+                              current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
+                              'mr-4 flex-shrink-0 h-6 w-6'
+                            )}
+                            aria-hidden="true"
+                          />
+                          {item.name}
+                        </a>
+                      )
+                    })}
                   </nav>
                 </div>
                 <div className="flex flex-shrink-0 border-t border-gray-200">
@@ -104,25 +112,28 @@ const Sidebar = ({ showMobileSidebar, onClose }) => {
               {/* <Image src={Logo} alt="Logo" className="h-8 w-auto" /> */}
             </div>
             <nav className="mt-5 flex-1 space-y-1 bg-white px-2">
-              {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className={classNames(
-                    item.current ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                    'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
-                  )}
-                >
-                  <item.icon
+              {navigation.map((item) => {
+                const current = path.match(item.match)
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
                     className={classNames(
-                      item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                      'mr-3 flex-shrink-0 h-6 w-6'
+                      current ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                      'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
                     )}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </a>
-              ))}
+                  >
+                    <item.icon
+                      className={classNames(
+                        current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
+                        'mr-3 flex-shrink-0 h-6 w-6'
+                      )}
+                      aria-hidden="true"
+                    />
+                    {item.name}
+                  </a>
+                )
+              })}
             </nav>
           </div>
           <div className="flex flex-shrink-0 border-t border-gray-200">
