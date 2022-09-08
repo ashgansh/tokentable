@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { erc20ABI, useAccount, useBalance, useNetwork, useSigner } from "wagmi"
+import { erc20ABI, useAccount, useNetwork, useSigner } from "wagmi"
 import { Contract } from "ethers"
-import { formatUnits, isAddress, parseUnits } from "ethers/lib/utils"
+import { Interface, isAddress, parseUnits } from "ethers/lib/utils"
 import toast from "react-hot-toast"
+import create from "zustand"
 
 import { CheckIcon } from "@heroicons/react/20/solid"
 
@@ -15,7 +16,39 @@ import { PrimaryButton, SecondaryButton } from "@/components/Button"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import Spinner from "@/components/Spinner"
 
-const FundVestingContractStep = ({ vestingContractAddress, tokenAddress }) => {
+const useVestingContractStore = create((set) => ({
+  step: 0,
+  tokenAddress: null,
+  vestingContractAddress: null,
+  goToStep1: (vestingContractAddress, tokenAddress) => set({ step: 1, vestingContractAddress, tokenAddress }),
+  goToStep2: () => set({ step: 2 })
+}))
+
+const getVestingContractAddressFromTxReceipt = (txReceipt) => {
+  const vestingCreatorInterface = new Interface(TOKENOPS_VESTING_CREATOR_CONTRACT_ABI);
+  return (
+    txReceipt.logs
+      // Parse log events
+      .map((log) => {
+        try {
+          const event = vestingCreatorInterface.parseLog(log);
+          return event;
+        } catch (e) {
+          return undefined;
+        }
+      })
+      // Get rid of the unknown events
+      .filter((event) => event !== undefined)
+      // Keep only VestingContractCreated events
+      .filter((event) => event.name === "VestingContractCreated")
+      // Take the first argument which is the new contract address
+      .map((event) => event.args[0].toString())
+      // Take the first address (there should only be one)
+      .shift()
+  );
+}
+
+const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNextStep }) => {
   const { handleSubmit, register, formState: { errors, isValid, isSubmitting } } = useForm({ mode: 'onChange' })
   const { address: account } = useAccount()
   const { data: signer } = useSigner()
@@ -47,7 +80,7 @@ const FundVestingContractStep = ({ vestingContractAddress, tokenAddress }) => {
     try { return tokenBalance.gte(parseUnits(tokenAmount)) } catch (e) { }
   }
 
-  const handleFundVestingContract = async ({tokenAmount}) => {
+  const handleFundVestingContract = async ({ tokenAmount }) => {
     const toastId = toast.loading("Sign transaction to fund your vesting contract")
     try {
       const amount = parseUnits(tokenAmount, decimals)
@@ -171,7 +204,7 @@ const useTokenAddressResolver = chain =>
     return data()
   }, [chain])
 
-const CreateVestingContractStep = () => {
+const CreateVestingContractStep = ({ goToNextStep }) => {
   const { chain } = useNetwork()
   const { data: signer } = useSigner()
   const { address: account } = useAccount()
@@ -214,9 +247,9 @@ const CreateVestingContractStep = () => {
       const tx = await tokenVestingCreator.createVestingContract(tokenAddress)
       toast.loading(`Creating your vesting contract...`, { id: toastId })
       const receipt = await tx.wait()
-      //const vestingContractAddress = getVestingContractAddressFromTxReceipt(receipt)
+      const vestingContractAddress = getVestingContractAddressFromTxReceipt(receipt)
       toast.success("Successfully created your vesting contract", { id: toastId })
-      //router.push(`/contracts/tokenops/${chainId}/${vestingContractAddress}`)
+      goToNextStep(vestingContractAddress, tokenAddress)
     } catch (e) {
       console.error(e)
 
@@ -346,7 +379,7 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
 }
 
 const Contracts = () => {
-  const STEP = 1
+  const { step, tokenAddress, vestingContractAddress, goToStep1, goToStep2 } = useVestingContractStore()
   return (
     <LayoutWrapper>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
@@ -354,25 +387,13 @@ const Contracts = () => {
       </div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-8">
         <div className="bg-white shadow sm:rounded-lg">
-          {STEP === 0 && (
-            <div className="flex gap-8 py-6 px-4 sm:p-6">
-              <CreateVestingContractProgressBar currentStep={0} />
-              <div className="flex-grow">
-                <CreateVestingContractStep />
-              </div>
+          <div className="flex gap-8 py-6 px-4 sm:p-6">
+            <CreateVestingContractProgressBar currentStep={step} />
+            <div className="flex-grow">
+              {step === 0 && <CreateVestingContractStep goToNextStep={goToStep1} />}
+              {step === 1 && <FundVestingContractStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} />}
             </div>
-          )}
-          {STEP === 1 && (
-            <div className="flex gap-8 py-6 px-4 sm:p-6">
-              <CreateVestingContractProgressBar currentStep={1} />
-              <div className="flex-grow">
-                <FundVestingContractStep
-                  vestingContractAddress="0x3Da274c95823Aaa0717cc572FE2C9604Ec8bF4BD"
-                  tokenAddress="0xC8BD9935f911Cef074AbB8774d775840091e8907"
-                />
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </LayoutWrapper>
