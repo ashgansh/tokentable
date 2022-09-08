@@ -1,14 +1,19 @@
-import { PrimaryButton } from "@/components/Button"
-import { LayoutWrapper } from "@/components/LayoutWrapper"
-import { NULL_ADDRESS } from "@/lib/constants"
-import { getProvider } from "@/lib/provider"
-import { getTokenBalance, getTokenDetails } from "@/lib/tokens"
-import { classNames, formatToken } from "@/lib/utils"
-import { CheckIcon } from "@heroicons/react/20/solid"
-import { isAddress } from "ethers/lib/utils"
 import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useAccount, useBalance, useNetwork } from "wagmi"
+import { useAccount, useNetwork, useSigner } from "wagmi"
+import { Contract } from "ethers"
+import { isAddress } from "ethers/lib/utils"
+import toast from "react-hot-toast"
+
+import { CheckIcon } from "@heroicons/react/20/solid"
+
+import { TOKENOPS_VESTING_CREATOR_CONTRACT_ABI, TOKENOPS_VESTING_CREATOR_CONTRACT_ADDRESS } from "@/lib/contracts/TokenOpsVestingCreator"
+import { getTokenBalance, getTokenDetails } from "@/lib/tokens"
+import { classNames, formatToken } from "@/lib/utils"
+
+import { PrimaryButton } from "@/components/Button"
+import { LayoutWrapper } from "@/components/LayoutWrapper"
+import Spinner from "@/components/Spinner"
 
 const useTokenAddressResolver = chain =>
   useCallback(async values => {
@@ -52,11 +57,13 @@ const useTokenAddressResolver = chain =>
 
 const CreateVestingContractForm = () => {
   const { chain } = useNetwork()
-  const { address: account} = useAccount()
+  const { data: signer } = useSigner()
+  const { address: account } = useAccount()
   const resolver = useTokenAddressResolver(chain)
 
-  const { register, watch, formState: { errors, isValid } } = useForm({ mode: 'onBlur', resolver })
+  const { handleSubmit, register, watch, formState: { errors, isValid, isSubmitting } } = useForm({ mode: 'onChange', resolver })
   const tokenAddress = watch("tokenAddress")
+
   const [tokenBalance, setTokenBalance] = useState()
 
   useEffect(() => {
@@ -74,14 +81,44 @@ const CreateVestingContractForm = () => {
         ])
         const formattedBalance = formatToken(tokenBalance, tokenDetails.decimals, tokenDetails.symbol)
         setTokenBalance(formattedBalance)
-      } catch (e) {}
+      } catch (e) { }
     }
 
     retrieveTokenBalance()
   }, [tokenAddress, chain, account])
 
+  const handleCreateVestingContract = async ({ tokenAddress }) => {
+    const toastId = toast.loading("Sign transaction in your wallet to create your vesting contract")
+    try {
+      const tokenVestingCreator = new Contract(
+        TOKENOPS_VESTING_CREATOR_CONTRACT_ADDRESS[5],
+        TOKENOPS_VESTING_CREATOR_CONTRACT_ABI,
+        signer
+      )
+      const tx = await tokenVestingCreator.createVestingContract(tokenAddress)
+      toast.loading(`Creating your vesting contract...`, { id: toastId })
+      const receipt = await tx.wait()
+      //const vestingContractAddress = getVestingContractAddressFromTxReceipt(receipt)
+      toast.success("Successfully created your vesting contract", { id: toastId })
+      //router.push(`/contracts/tokenops/${chainId}/${vestingContractAddress}`)
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong creating your vesting contract", { id: toastId })
+      toast.error(message)
+    }
+  }
+
   return (
-    <form className="h-full">
+    <form className="h-full" onSubmit={handleSubmit(handleCreateVestingContract)}>
       <div className="flex flex-col justify-between gap-4 h-full">
         <div>
           <h3 className="text-lg font-medium leading-6 text-gray-900">Token</h3>
@@ -106,11 +143,14 @@ const CreateVestingContractForm = () => {
               <>Your balance: {tokenBalance}</>
             )}
           </span>
-
         </div>
         <div>
-          <PrimaryButton type="submit" disabled={!isValid}>
-            Create
+          <PrimaryButton type="submit" disabled={!isValid || isSubmitting}>
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-1.5"><Spinner className="h-4 w-4" /><span>Creating</span></span>
+            ) : (
+              <span>Create</span>
+            )}
           </PrimaryButton>
         </div>
       </div >

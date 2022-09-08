@@ -20,6 +20,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.34.2",
+    "react-hot-toast": "^2.3.0",
     "react-moment": "^1.1.2",
     "wagmi": "^0.6.4",
     "zustand": "^4.1.1"

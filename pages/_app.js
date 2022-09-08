@@ -10,6 +10,7 @@ import {
   WagmiConfig,
 } from 'wagmi';
 import { chains, provider } from "@/lib/provider"
+import { Toaster } from 'react-hot-toast';
 
 const { connectors } = getDefaultWallets({
   appName: 'Token Ops',
@@ -27,6 +28,7 @@ function MyApp({ Component, pageProps }) {
     <WagmiConfig client={wagmiClient}>
       <RainbowKitProvider chains={chains}>
         <Component {...pageProps} />
+        <Toaster position="bottom-center" />
       </RainbowKitProvider>
     </WagmiConfig>
   );
