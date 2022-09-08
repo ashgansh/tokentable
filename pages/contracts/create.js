@@ -1,54 +1,120 @@
+import { PrimaryButton } from "@/components/Button"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import { NULL_ADDRESS } from "@/lib/constants"
+import { getProvider } from "@/lib/provider"
+import { getTokenBalance, getTokenDetails } from "@/lib/tokens"
 import { classNames, formatToken } from "@/lib/utils"
 import { CheckIcon } from "@heroicons/react/20/solid"
 import { isAddress } from "ethers/lib/utils"
+import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useBalance } from "wagmi"
+import { useAccount, useBalance, useNetwork } from "wagmi"
+
+const useTokenAddressResolver = chain =>
+  useCallback(async values => {
+    const { tokenAddress } = values
+
+    const data = (errorMessage) => {
+      if (!errorMessage) {
+        return {
+          values,
+          errors: {}
+        }
+      }
+
+      return {
+        values,
+        errors: {
+          tokenAddress: {
+            type: "validation",
+            message: errorMessage
+          }
+        }
+      }
+    }
+
+    if (!chain || chain.unsupported) {
+      return data("Unsupported token chain. Please switch to a supported chain.")
+    }
+
+    if (!isAddress(tokenAddress)) {
+      return data("Invalid token address")
+    }
+
+    try {
+      await getTokenDetails(chain.id, tokenAddress)
+    } catch (e) {
+      return data("This address is not a valid ERC20 token")
+    }
+
+    return data()
+  }, [chain])
 
 const CreateVestingContractForm = () => {
-  const { register, watch, formState: { errors } } = useForm({mode: 'onBlur'})
-  const tokenAddress = watch("tokenAddress") || NULL_ADDRESS
-  const { data: balanceData, isError: isBalanceError, isLoading: isBalanceLoading} = useBalance({
-    addressOrName: '0xe8c475e7d1783d342FE11B7a35E034980aed0769',
-    token: tokenAddress
-  })
-  const {value: tokenBalance, decimals, symbol} = balanceData || {}
-  const isValidERC20 = !!balanceData
-  console.log(isAddress(''))
+  const { chain } = useNetwork()
+  const { address: account} = useAccount()
+  const resolver = useTokenAddressResolver(chain)
+
+  const { register, watch, formState: { errors, isValid } } = useForm({ mode: 'onBlur', resolver })
+  const tokenAddress = watch("tokenAddress")
+  const [tokenBalance, setTokenBalance] = useState()
+
+  useEffect(() => {
+    setTokenBalance("")
+
+    if (!chain) return
+    if (!tokenAddress) return
+    if (!isAddress(tokenAddress)) return
+
+    const retrieveTokenBalance = async () => {
+      try {
+        const [tokenBalance, tokenDetails] = await Promise.all([
+          await getTokenBalance(chain?.id, tokenAddress, account),
+          await getTokenDetails(chain?.id, tokenAddress)
+        ])
+        const formattedBalance = formatToken(tokenBalance, tokenDetails.decimals, tokenDetails.symbol)
+        setTokenBalance(formattedBalance)
+      } catch (e) {}
+    }
+
+    retrieveTokenBalance()
+  }, [tokenAddress, chain, account])
+
   return (
-    <div>
-      <h3 className="text-lg font-medium leading-6 text-gray-900">Token</h3>
-      <div className="mt-2 max-w-xl text-sm text-gray-500">
-        <p>Insert the token address you want to vest.</p>
-      </div>
-      <form className="mt-5 sm:flex sm:items-center">
-        <div className="w-full sm:max-w-xs">
-          <input
-            type="text"
-            name="tokenAddress"
-            id="tokenAddress"
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            placeholder="0x6B175474E89094C44Da98b954EedeAC495271d0F"
-            {...register("tokenAddress", {required: true, validate: isAddress})}
-          />
+    <form className="h-full">
+      <div className="flex flex-col justify-between gap-4 h-full">
+        <div>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Token</h3>
+          <div className="mt-2 max-w-xl text-sm text-gray-500">
+            <p>Insert the token address you want to vest.</p>
+          </div>
+          <div className="mt-1 w-full sm:max-w-md">
+            <input
+              type="text"
+              name="tokenAddress"
+              id="tokenAddress"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              placeholder="0x6B175474E89094C44Da98b954EedeAC495271d0F"
+              {...register("tokenAddress", { required: true })}
+            />
+          </div>
+          <span className="text-sm text-gray-500">
+            {errors.tokenAddress && (
+              <>{errors.tokenAddress.message}</>
+            )}
+            {!errors?.tokenAddress && tokenBalance && (
+              <>Your balance: {tokenBalance}</>
+            )}
+          </span>
+
         </div>
-        <button
-          type="submit"
-          className="mt-3 inline-flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-        >
-          Create
-        </button>
-      </form>
-      <span className="text-sm text-gray-500">
-        {tokenBalance && (
-          <>Your balance: {formatToken(tokenBalance, decimals, symbol)}</>
-        )}
-        {errors && (
-          <>Invalid token</>
-        )}
-      </span>
-    </div>
+        <div>
+          <PrimaryButton type="submit" disabled={!isValid}>
+            Create
+          </PrimaryButton>
+        </div>
+      </div >
+    </form>
   )
 }
 
@@ -63,7 +129,6 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
     { name: 'Fund the vesting contract', status: status(currentStep, 1) },
     { name: 'Add the first stakeholder', status: status(currentStep, 2) },
   ]
-
 
   return (
     <nav aria-label="Progress">
@@ -135,11 +200,11 @@ const Contracts = () => {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-8">
         <div className="bg-white shadow sm:rounded-lg">
           <div className="flex gap-8 py-6 px-4 sm:p-6">
-          <CreateVestingContractProgressBar currentStep={0} />
-          <div className="flex-grow">
-          <CreateVestingContractForm />
+            <CreateVestingContractProgressBar currentStep={0} />
+            <div className="flex-grow">
+              <CreateVestingContractForm />
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </LayoutWrapper>
