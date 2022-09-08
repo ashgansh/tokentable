@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { useAccount, useNetwork, useSigner } from "wagmi"
+import { erc20ABI, useAccount, useBalance, useNetwork, useSigner } from "wagmi"
 import { Contract } from "ethers"
-import { isAddress } from "ethers/lib/utils"
+import { formatUnits, isAddress, parseUnits } from "ethers/lib/utils"
 import toast from "react-hot-toast"
 
 import { CheckIcon } from "@heroicons/react/20/solid"
@@ -11,9 +11,125 @@ import { TOKENOPS_VESTING_CREATOR_CONTRACT_ABI, TOKENOPS_VESTING_CREATOR_CONTRAC
 import { getTokenBalance, getTokenDetails } from "@/lib/tokens"
 import { classNames, formatToken } from "@/lib/utils"
 
-import { PrimaryButton } from "@/components/Button"
+import { PrimaryButton, SecondaryButton } from "@/components/Button"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import Spinner from "@/components/Spinner"
+
+const FundVestingContractStep = ({ vestingContractAddress, tokenAddress }) => {
+  const { handleSubmit, register, formState: { errors, isValid, isSubmitting } } = useForm({ mode: 'onChange' })
+  const { address: account } = useAccount()
+  const { data: signer } = useSigner()
+  const { chain } = useNetwork()
+  const [tokenBalanceData, setTokenBalanceData] = useState({})
+  const { decimals, symbol, tokenBalance } = tokenBalanceData
+
+  useEffect(() => {
+    setTokenBalanceData({})
+
+    if (!chain) return
+    if (!tokenAddress) return
+    if (!isAddress(tokenAddress)) return
+
+    const retrieveTokenBalance = async () => {
+      try {
+        const [tokenBalance, tokenDetails] = await Promise.all([
+          await getTokenBalance(chain?.id, tokenAddress, account),
+          await getTokenDetails(chain?.id, tokenAddress)
+        ])
+        setTokenBalanceData({ tokenBalance, ...tokenDetails })
+      } catch (e) { }
+    }
+
+    retrieveTokenBalance()
+  }, [tokenAddress, chain, account])
+
+  const withinBalance = (tokenAmount) => {
+    try { return tokenBalance.gte(parseUnits(tokenAmount)) } catch (e) { }
+  }
+
+  const handleFundVestingContract = async ({tokenAmount}) => {
+    const toastId = toast.loading("Sign transaction to fund your vesting contract")
+    try {
+      const amount = parseUnits(tokenAmount, decimals)
+      const tokenContract = new Contract(tokenAddress, erc20ABI, signer)
+      const tx = await tokenContract.transfer(vestingContractAddress, amount)
+      toast.loading(`Funding your vesting contract...`, { id: toastId })
+      await tx.wait()
+      toast.success("Successfully funded your vesting contract", { id: toastId })
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong funding your vesting contract", { id: toastId })
+      toast.error(message)
+    }
+  }
+
+  return (
+    <form className="h-full" onSubmit={handleSubmit(handleFundVestingContract)}>
+      <div className="flex flex-col justify-between gap-4 h-full">
+        <div>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">Fund</h3>
+          <div className="mt-2 max-w-xl text-sm text-gray-500">
+            <p>Fund your vesting contract. You can always do this later.</p>
+          </div>
+          <div className="mt-1">
+            <div className="relative mt-1 rounded-md shadow-sm w-48">
+              <input
+                type="number"
+                id="tokenAmount"
+                className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                placeholder="0.00"
+                {...register("tokenAmount", { required: true, min: 0, validate: { withinBalance } })}
+              />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <span className="text-gray-500 sm:text-sm" id="price-currency">
+                  {symbol}
+                </span>
+              </div>
+            </div>
+            {tokenBalance && (
+              <div className="text-sm text-gray-500">
+                Your balance: {formatToken(tokenBalance, decimals, symbol)}
+              </div>
+            )}
+            {errors?.tokenAmount?.type === "withinBalance" && (
+              <div className="text-sm text-gray-500">
+                Balance is too low
+              </div>
+            )}
+            {errors?.tokenAmount?.type === "min" && (
+              <div className="text-sm text-gray-500">
+                The transfer amount cannot be negative
+              </div>
+            )}
+          </div>
+          <span className="text-sm text-gray-500">
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <PrimaryButton type="submit" disabled={!isValid || isSubmitting}>
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-1.5"><Spinner className="h-4 w-4" /><span>Funding</span></span>
+            ) : (
+              <span>Fund</span>
+            )}
+          </PrimaryButton>
+          <SecondaryButton type="submit" disabled={isSubmitting}>
+            <span>Skip</span>
+          </SecondaryButton>
+        </div>
+      </div >
+    </form>
+  )
+}
 
 const useTokenAddressResolver = chain =>
   useCallback(async values => {
@@ -55,7 +171,7 @@ const useTokenAddressResolver = chain =>
     return data()
   }, [chain])
 
-const CreateVestingContractForm = () => {
+const CreateVestingContractStep = () => {
   const { chain } = useNetwork()
   const { data: signer } = useSigner()
   const { address: account } = useAccount()
@@ -178,18 +294,18 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
             {step.status === 'complete' ? (
               <>
                 {stepIdx !== steps.length - 1 ? (
-                  <div className="absolute top-4 left-4 -ml-px mt-0.5 h-full w-0.5 bg-indigo-600" aria-hidden="true" />
+                  <div className="absolute top-4 left-4 -ml-px mt-0.5 h-full w-0.5 bg-tokenops-primary-600" aria-hidden="true" />
                 ) : null}
-                <a href={step.href} className="group relative flex items-center">
+                <div className="group relative flex items-center">
                   <span className="flex h-9 items-center">
-                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 group-hover:bg-indigo-800">
+                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-tokenops-primary-600">
                       <CheckIcon className="h-5 w-5 text-white" aria-hidden="true" />
                     </span>
                   </span>
                   <span className="ml-4 flex min-w-0 flex-col">
                     <span className="text-sm font-medium">{step.name}</span>
                   </span>
-                </a>
+                </div>
               </>
             ) : step.status === 'current' ? (
               <>
@@ -198,12 +314,12 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
                 ) : null}
                 <div className="group relative flex items-center" aria-current="step">
                   <span className="flex h-9 items-center" aria-hidden="true">
-                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-indigo-600 bg-white">
-                      <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-tokenops-primary-600 bg-white">
+                      <span className="h-2.5 w-2.5 rounded-full bg-tokenops-primary-600" />
                     </span>
                   </span>
                   <span className="ml-4 flex min-w-0 flex-col">
-                    <span className="text-sm font-medium text-indigo-600">{step.name}</span>
+                    <span className="text-sm font-medium text-tokenops-primary-700">{step.name}</span>
                   </span>
                 </div>
               </>
@@ -214,9 +330,7 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
                 ) : null}
                 <a href={step.href} className="group relative flex items-center">
                   <span className="flex h-9 items-center" aria-hidden="true">
-                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white group-hover:border-gray-400">
-                      <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-gray-300" />
-                    </span>
+                    <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white" />
                   </span>
                   <span className="ml-4 flex min-w-0 flex-col">
                     <span className="text-sm font-medium text-gray-500">{step.name}</span>
@@ -232,6 +346,7 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
 }
 
 const Contracts = () => {
+  const STEP = 1
   return (
     <LayoutWrapper>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
@@ -239,12 +354,25 @@ const Contracts = () => {
       </div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-8">
         <div className="bg-white shadow sm:rounded-lg">
-          <div className="flex gap-8 py-6 px-4 sm:p-6">
-            <CreateVestingContractProgressBar currentStep={0} />
-            <div className="flex-grow">
-              <CreateVestingContractForm />
+          {STEP === 0 && (
+            <div className="flex gap-8 py-6 px-4 sm:p-6">
+              <CreateVestingContractProgressBar currentStep={0} />
+              <div className="flex-grow">
+                <CreateVestingContractStep />
+              </div>
             </div>
-          </div>
+          )}
+          {STEP === 1 && (
+            <div className="flex gap-8 py-6 px-4 sm:p-6">
+              <CreateVestingContractProgressBar currentStep={1} />
+              <div className="flex-grow">
+                <FundVestingContractStep
+                  vestingContractAddress="0x3Da274c95823Aaa0717cc572FE2C9604Ec8bF4BD"
+                  tokenAddress="0xC8BD9935f911Cef074AbB8774d775840091e8907"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </LayoutWrapper>
