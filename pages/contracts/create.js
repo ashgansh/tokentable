@@ -15,11 +15,15 @@ import { classNames, formatToken } from "@/lib/utils"
 import { PrimaryButton, SecondaryButton } from "@/components/Button"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import Spinner from "@/components/Spinner"
+import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting"
 
 const useVestingContractStore = create((set) => ({
+  //step: 2,
+  //vestingContractAddress: "0x145abcbf033d896d4e34ee8f56a8188cb5d5c334",
+  //tokenAddress: "0xC8BD9935f911Cef074AbB8774d775840091e8907",
   step: 0,
-  tokenAddress: null,
   vestingContractAddress: null,
+  tokenAddress: null,
   goToStep1: (vestingContractAddress, tokenAddress) => set({ step: 1, vestingContractAddress, tokenAddress }),
   goToStep2: () => set({ step: 2 })
 }))
@@ -47,6 +51,195 @@ const getVestingContractAddressFromTxReceipt = (txReceipt) => {
       .shift()
   );
 }
+
+const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress }) => {
+  const { handleSubmit, register, getValues, formState: { errors, isValid, isSubmitting } } = useForm()
+  const { data: signer } = useSigner()
+  const { chain } = useNetwork()
+  const [tokenBalanceData, setTokenBalanceData] = useState({})
+  const { decimals, symbol, tokenBalance } = tokenBalanceData
+
+  useEffect(() => {
+    setTokenBalanceData({})
+
+    if (!chain) return
+    if (!tokenAddress) return
+    if (!isAddress(tokenAddress)) return
+
+    const retrieveTokenBalance = async () => {
+      try {
+        const [tokenBalance, tokenDetails] = await Promise.all([
+          // TODO: replace this with .getWithdrawableAmount()
+          await getTokenBalance(chain?.id, tokenAddress, vestingContractAddress),
+          await getTokenDetails(chain?.id, tokenAddress)
+        ])
+        setTokenBalanceData({ tokenBalance, ...tokenDetails })
+      } catch (e) { }
+    }
+
+    retrieveTokenBalance()
+  }, [tokenAddress, chain, vestingContractAddress])
+
+  const withinBalance = (tokenAmount) => {
+    try { return tokenBalance.gte(parseUnits(tokenAmount)) } catch (e) { }
+  }
+
+  const endIsAfterStart = (end) => {
+    const start = getValues("start")
+    const startTime = Math.round(new Date(start).getTime() / 1000)
+    const endTime = Math.round(new Date(end).getTime() / 1000)
+    return endTime > startTime
+  }
+
+  const handleAddSchedule = async ({ tokenAmount, start, end, beneficiary }) => {
+    const startTime = Math.round(new Date(start).getTime() / 1000)
+    const endTime = Math.round(new Date(end).getTime() / 1000)
+    const cliff = 0
+    const duration = endTime - startTime
+    const slicePeriodSeconds = 1
+    const revocable = true
+    const amount = parseUnits(tokenAmount, decimals)
+
+    const toastId = toast.loading("Sign transaction to add a stakeholder")
+
+    try {
+      const vestingContract = new Contract(vestingContractAddress, TOKENOPS_VESTING_CONTRACT_ABI, signer)
+      const tx = await vestingContract.createVestingSchedule(
+        beneficiary,
+        startTime,
+        cliff,
+        duration,
+        slicePeriodSeconds,
+        revocable,
+        amount
+      )
+      toast.loading(`Adding a stakeholder...`, { id: toastId })
+      await tx.wait()
+      toast.success("Successfully added a stakeholder to your vesting contract", { id: toastId })
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong adding a stakeholder to your vesting contract", { id: toastId })
+      toast.error(message)
+    }
+  }
+
+  return (
+    <form className="h-full" onSubmit={handleSubmit(handleAddSchedule)}>
+      <div className="flex flex-col justify-between gap-4 h-full">
+        <div>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">First stakeholder</h3>
+          <div className="mt-2 max-w-xl text-sm text-gray-500">
+            <p>Create a vesting schedule for your first stakeholder.</p>
+          </div>
+          <div className="mt-1">
+            <div className="text-sm text-gray-500">
+              Vesting contract address: {vestingContractAddress}
+              {tokenBalance && (
+                <> (balance: {formatToken(tokenBalance, decimals, symbol)})</>
+              )}
+            </div>
+          </div>
+          <div className="mt-6 flex flex-col gap-2">
+            <div>
+              <label htmlFor="beneficiary" className="block text-sm font-medium text-gray-700">
+                Stakeholder address
+                <span className="text-sm text-red-500 pl-1">
+                  {errors?.beneficiary?.type === "required" && "A valid address is required"}
+                  {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
+                </span>
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  id="beneficiary"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
+                  {...register("beneficiary", { required: true, validate: { isAddress } })}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="start" className="block text-sm font-medium text-gray-700">
+                Start
+                <span className="text-sm text-red-500 pl-1">
+                  {errors?.start?.type === "required" && "A vesting start is required"}
+                </span>
+              </label>
+              <div className="mt-1">
+                <input
+                  type="datetime-local"
+                  id="start"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  {...register("start", { required: true })}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="end" className="block text-sm font-medium text-gray-700">
+                End
+                <span className="text-sm text-red-500 pl-1">
+                  {errors?.end?.type === "endIsAfterStart" && "Vesting cannot end before it has started"}
+                  {errors?.end?.type === "required" && "A vesting end is required"}
+                </span>
+              </label>
+              <div className="mt-1">
+                <input
+                  type="datetime-local"
+                  id="end"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  {...register("end", { required: true, validate: { endIsAfterStart } })}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="tokenAmount" className="block text-sm font-medium text-gray-700">
+                Vesting amount
+                <span className="text-sm text-red-500 pl-1">
+                  {errors?.tokenAmount?.type === "withinBalance" && "Balance is too low"}
+                  {errors?.tokenAmount?.type === "min" && "The amount cannot be negative"}
+                  {errors?.tokenAmount?.type === "required" && "A vesting amount is required"}
+                </span>
+              </label>
+              <div className="relative mt-1 rounded-md shadow-sm w-48">
+                <input
+                  type="number"
+                  id="tokenAmount"
+                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="0.00"
+                  {...register("tokenAmount", { required: true, min: 0, validate: { withinBalance } })}
+                />
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <span className="text-gray-500 sm:text-sm">
+                    {symbol}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <PrimaryButton type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-1.5"><Spinner className="h-4 w-4" /><span>Adding first stakeholder</span></span>
+            ) : (
+              <span>Add first stakeholder</span>
+            )}
+          </PrimaryButton>
+        </div>
+      </div >
+    </form>
+  )
+}
+
 
 const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNextStep }) => {
   const { handleSubmit, register, formState: { errors, isValid, isSubmitting } } = useForm({ mode: 'onChange' })
@@ -123,7 +316,7 @@ const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNex
                 {...register("tokenAmount", { required: true, min: 0, validate: { withinBalance } })}
               />
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <span className="text-gray-500 sm:text-sm" id="price-currency">
+                <span className="text-gray-500 sm:text-sm">
                   {symbol}
                 </span>
               </div>
@@ -391,7 +584,8 @@ const Contracts = () => {
             <CreateVestingContractProgressBar currentStep={step} />
             <div className="flex-grow">
               {step === 0 && <CreateVestingContractStep goToNextStep={goToStep1} />}
-              {step === 1 && <FundVestingContractStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} />}
+              {step === 1 && <FundVestingContractStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} goToNextStep={goToStep2} />}
+              {step === 2 && <AddFirstStakeholderStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} />}
             </div>
           </div>
         </div>
