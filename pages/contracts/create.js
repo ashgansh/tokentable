@@ -16,11 +16,9 @@ import { PrimaryButton, SecondaryButton } from "@/components/Button"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import Spinner from "@/components/Spinner"
 import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting"
+import { useRouter } from "next/router"
 
 const useVestingContractStore = create((set) => ({
-  //step: 1,
-  //vestingContractAddress: "0x145abcbf033d896d4e34ee8f56a8188cb5d5c334",
-  //tokenAddress: "0xC8BD9935f911Cef074AbB8774d775840091e8907",
   step: 0,
   vestingContractAddress: null,
   tokenAddress: null,
@@ -52,7 +50,7 @@ const getVestingContractAddressFromTxReceipt = (txReceipt) => {
   );
 }
 
-const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress }) => {
+const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress, goToNextStep }) => {
   const { handleSubmit, register, getValues, formState: { errors, isValid, isSubmitting } } = useForm()
   const { data: signer } = useSigner()
   const { chain } = useNetwork()
@@ -116,6 +114,7 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress }) => {
       toast.loading(`Adding a stakeholder...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully added a stakeholder to your vesting contract", { id: toastId })
+      goToNextStep()
     } catch (e) {
       console.error(e)
 
@@ -239,7 +238,6 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress }) => {
     </form>
   )
 }
-
 
 const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNextStep }) => {
   const { handleSubmit, register, formState: { errors, isValid, isSubmitting } } = useForm({ mode: 'onChange' })
@@ -573,7 +571,9 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
 }
 
 const Contracts = () => {
+  const { push } = useRouter()
   const { step, tokenAddress, vestingContractAddress, goToStep1, goToStep2 } = useVestingContractStore()
+  const goToVestingPage = () => push(`/vesting/tokenops/5/${vestingContractAddress}`)
   return (
     <LayoutWrapper>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
@@ -586,7 +586,7 @@ const Contracts = () => {
             <div className="flex-grow">
               {step === 0 && <CreateVestingContractStep goToNextStep={goToStep1} />}
               {step === 1 && <FundVestingContractStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} goToNextStep={goToStep2} />}
-              {step === 2 && <AddFirstStakeholderStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} />}
+              {step === 2 && <AddFirstStakeholderStep vestingContractAddress={vestingContractAddress} tokenAddress={tokenAddress} goToNextStep={goToVestingPage} />}
             </div>
           </div>
         </div>
