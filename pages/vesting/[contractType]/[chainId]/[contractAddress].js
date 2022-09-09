@@ -13,26 +13,50 @@ import { isAddress, parseUnits } from "ethers/lib/utils"
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import Spinner from "@/components/Spinner"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
-import { useSigner } from "wagmi"
+import { useAccount, useSigner } from "wagmi"
 import toast from "react-hot-toast"
+import VestingPosition from "@/components/VestingPosition"
 
 const VestingDashboard = ({ vestingData }) => {
+  const { address: account } = useAccount()
+  const myGrants = vestingData?.grants?.filter(grant => grant.beneficiary === account)
+
   if (!vestingData) return <>Loading</>
 
   return (
-    <>
-      {Object.keys(vestingData.tokens).map(tokenAddress => (
-        <Fragment key={tokenAddress}>
+    <div className="flex flex-col gap-4 py-4">
+      <div>
+        <h2 className="text-lg py-2">Vesting overview</h2>
+        {Object.keys(vestingData.tokens).map(tokenAddress => (
           <VestingInsights
+            key={tokenAddress}
             totalAllocated={vestingData.totalAllocatedAmounts?.[tokenAddress] || BigNumber.from(0)}
             totalWithdrawn={vestingData.totalWithdrawnAmounts?.[tokenAddress] || BigNumber.from(0)}
             totalVested={vestingData.totalVestedAmounts?.[tokenAddress] || BigNumber.from(0)}
             tokenAddress={tokenAddress}
-            tokens={vestingData.tokens} />
-          <VestingTable grants={vestingData.grants} tokens={vestingData.tokens} />
-        </Fragment>
-      ))}
-    </>
+            tokens={vestingData.tokens}
+          />
+        ))}
+      </div>
+      {myGrants.length > 0 && (
+        <div>
+          <h2 className="text-lg py-2">Your position</h2>
+          {myGrants.map(grant => (
+            <VestingPosition
+              key={grant.scheduleId}
+              grant={grant}
+              chainId={vestingData?.chainId}
+              getReleasableAmount={vestingData?.getReleasableAmount}
+              releaseAndWithdraw={vestingData?.releaseAndWithdraw}
+            />
+          ))}
+        </div>
+      )}
+      <div>
+        <h2 className="text-lg py-2">Stakeholders</h2>
+        <VestingTable grants={vestingData.grants} tokens={vestingData.tokens} />
+      </div>
+    </div>
   )
 }
 
