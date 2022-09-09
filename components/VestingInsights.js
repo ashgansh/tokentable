@@ -17,6 +17,7 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
     {
       name: "Tokens Allocated",
       stat: tokenFormatter(tokenAddress, totalAllocated),
+      percentage: null,
       amount: totalAllocated
     },
     {
@@ -42,7 +43,7 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
             <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
               <div className="flex items-baseline text-2xl font-semibold text-indigo-600">
                 {item.stat}
-                {item.percentage && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
+                {item.percentage !== null && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
               </div>
             </dd>
               <div className="inline-flex items-baseline py-0.5 text-sm font-medium md:mt-2 lg:mt-0">

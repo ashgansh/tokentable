@@ -19,7 +19,7 @@ import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting"
 import { useRouter } from "next/router"
 
 const useVestingContractStore = create((set) => ({
-  step: 0,
+  step: 1,
   vestingContractAddress: null,
   tokenAddress: null,
   goToStep1: (vestingContractAddress, tokenAddress) => set({ step: 1, vestingContractAddress, tokenAddress }),
@@ -268,7 +268,7 @@ const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNex
   }, [tokenAddress, chain, account])
 
   const withinBalance = (tokenAmount) => {
-    try { return tokenBalance.gte(parseUnits(tokenAmount)) } catch (e) { }
+    try { return tokenBalance.gte(parseUnits(tokenAmount, decimals)) } catch (e) { }
   }
 
   const handleFundVestingContract = async ({ tokenAmount }) => {
