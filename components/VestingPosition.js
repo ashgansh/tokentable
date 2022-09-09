@@ -7,6 +7,7 @@ import toast from "react-hot-toast"
 import Moment from "react-moment"
 import { useSigner } from "wagmi"
 import { PrimaryButton } from "./Button"
+import Spinner from "./Spinner"
 
 const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmount }) => {
   const [isClaiming, setIsClaiming] = useState(false)
@@ -46,13 +47,13 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
       toast.loading(`Claiming your tokens...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully claimed your tokens", { id: toastId })
-      onClose()
     } catch (e) {
       console.error(e)
 
       // User didn't sign transaction
       if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
         toast.dismiss(toastId)
+        setIsClaiming(false)
         return
       }
 
@@ -72,9 +73,13 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
             <ItemTitle>Claimable</ItemTitle>
             <div className="flex gap-4">
               <span className="text-lg">{releasableAmount && formatToken(releasableAmount)}</span>
-              {releasableAmount && releasableAmount.lt(0) && releaseAndWithdraw && (
-                <PrimaryButton className="text-xs py-1.5 px-2" onClick={handleReleaseAndWithdraw}>
-                  Claim
+              {releasableAmount && releasableAmount.gt(0) && releaseAndWithdraw && (
+                <PrimaryButton className="text-xs py-1.5 px-2" onClick={handleReleaseAndWithdraw} disabled={isClaiming}>
+                  <span className="inline-flex items-center gap-1.5">
+                    {isClaiming && <Spinner className="h-4 w-4" />}
+                    {isClaiming && <span>Claiming</span>}
+                    {!isClaiming && <span>Claim</span>}
+                  </span>
                 </PrimaryButton>
               )}
             </div>
