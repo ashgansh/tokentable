@@ -18,7 +18,7 @@ import Spinner from "@/components/Spinner"
 import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting"
 
 const useVestingContractStore = create((set) => ({
-  //step: 2,
+  //step: 1,
   //vestingContractAddress: "0x145abcbf033d896d4e34ee8f56a8188cb5d5c334",
   //tokenAddress: "0xC8BD9935f911Cef074AbB8774d775840091e8907",
   step: 0,

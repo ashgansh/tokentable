@@ -12,9 +12,13 @@ const TokenAmountValue = ({ tokenAddress, currency, children }) => {
     if (!tokenAddress || !currency) return
 
     const retrieveTokenPrice = async () => {
-      const res = await axios.get(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`)
-      const coinPrice = res.data?.market_data?.current_price?.[currency.toLowerCase()]
-      setCoinPrice(coinPrice)
+      try {
+        const res = await axios.get(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`)
+        const coinPrice = res.data?.market_data?.current_price?.[currency.toLowerCase()]
+        setCoinPrice(coinPrice)
+      } catch (e) {
+        setCoinPrice(0)
+      }
     }
 
     retrieveTokenPrice()
