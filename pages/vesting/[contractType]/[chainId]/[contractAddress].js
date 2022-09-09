@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form"
 import { isAddress, parseUnits } from "ethers/lib/utils"
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import Spinner from "@/components/Spinner"
-import { tokenStore, useTokenDetails } from "@/lib/tokens"
+import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { useSigner } from "wagmi"
 import toast from "react-hot-toast"
 
@@ -36,14 +36,19 @@ const VestingDashboard = ({ vestingData }) => {
   )
 }
 
-const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmount, addVestingSchedule }) => {
+const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmounts, addVestingSchedule }) => {
   const { handleSubmit, register, getValues, formState: { errors, isValid, isSubmitting } } = useForm()
-  const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddresses?.[0])
+  const tokenAddress = tokenAddresses?.[0]
+  const availableAmount = availableAmounts?.[tokenAddress]
+  const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
   const { data: signer } = useSigner()
+  const formatToken = useTokenFormatter(chainId, tokenAddress)
 
   const withinAvailableTokens = (amount) => {
+    if (!availableAmount) return true
+
     try {
-      return tokenBalance.gte(parseUnits(amount, symbols))
+      return availableAmount.gte(parseUnits(amount, tokenDecimals))
     } catch (e) {
       return true
     }
@@ -61,7 +66,8 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmo
       startTime: Math.round(new Date(start).getTime() / 1000),
       endTime: Math.round(new Date(end).getTime() / 1000),
       amount: parseUnits(amount, tokenDecimals),
-      beneficiary
+      beneficiary,
+      tokenAddress
     }
     const toastId = toast.loading("Sign transaction to add a schedule")
     try {
@@ -140,13 +146,20 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmo
           </div>
         </ModalBody>
         <ModalActionFooter>
-          <PrimaryButton type="submit" disabled={isSubmitting}>
-            <span className="inline-flex items-center gap-1.5">
-              {isSubmitting && <Spinner className="h-4 w-4" />}
-              {isSubmitting && <span>Adding schedule</span>}
-              {!isSubmitting && <span>Add schedule</span>}
-            </span>
-          </PrimaryButton>
+          <div className="flex justify-between items-center w-full">
+            <p className="text text-gray-800">
+              {availableAmount && (
+                <>Available tokens to allocate: {formatToken(availableAmount)}</>
+              )}
+            </p>
+            <PrimaryButton type="submit" disabled={isSubmitting}>
+              <span className="inline-flex items-center gap-1.5">
+                {isSubmitting && <Spinner className="h-4 w-4" />}
+                {isSubmitting && <span>Adding schedule</span>}
+                {!isSubmitting && <span>Add schedule</span>}
+              </span>
+            </PrimaryButton>
+          </div>
         </ModalActionFooter>
       </form>
     </Modal>
@@ -185,6 +198,7 @@ const Vesting = () => {
         chainId={chainId}
         tokenAddresses={tokenAddresses}
         addVestingSchedule={vestingData?.addVestingSchedule}
+        availableAmounts={vestingData?.availableAmounts}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
