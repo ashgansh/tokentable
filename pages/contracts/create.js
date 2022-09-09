@@ -282,6 +282,7 @@ const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNex
       toast.loading(`Funding your vesting contract...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully funded your vesting contract", { id: toastId })
+      goToNextStep()
     } catch (e) {
       console.error(e)
 
