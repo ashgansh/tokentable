@@ -60,19 +60,33 @@ const VestingDashboard = ({ vestingData }) => {
   )
 }
 
-const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmounts, addVestingSchedule }) => {
-  const { handleSubmit, register, getValues, formState: { errors, isValid, isSubmitting } } = useForm()
+const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, addVestingSchedule, getAdminTokenAllowance }) => {
+  const { handleSubmit, register, getValues, formState: { errors, isSubmitting } } = useForm()
+  const { address: account } = useAccount()
+  const [ tokenAllowance, setTokenAllowance ] = useState(null)
   const tokenAddress = tokenAddresses?.[0]
-  const availableAmount = availableAmounts?.[tokenAddress]
   const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
   const { data: signer } = useSigner()
   const formatToken = useTokenFormatter(chainId, tokenAddress)
 
-  const withinAvailableTokens = (amount) => {
-    if (!availableAmount) return true
+  useEffect(() => {
+    if (!account) return
+    if (!tokenAddress) return
+    if (!getAdminTokenAllowance) return
+
+    const retrieveTokenAllowance = async () => {
+      const allowance = await getAdminTokenAllowance(tokenAddress, account)
+      setTokenAllowance(allowance)
+    }
+
+    retrieveTokenAllowance()
+  }, [getAdminTokenAllowance, account, tokenAddress])
+
+  const withinTokenAllowance = (amount) => {
+    if (!tokenAllowance) return true
 
     try {
-      return availableAmount.gte(parseUnits(amount, tokenDecimals))
+      return tokenAllowance.gte(parseUnits(amount, tokenDecimals))
     } catch (e) {
       return true
     }
@@ -159,10 +173,10 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmo
               <CurrencyInput
                 symbol={tokenSymbol}
                 placeholder="0.00"
-                {...register("amount", { required: true, min: 0, validate: { withinAvailableTokens } })}
+                {...register("amount", { required: true, min: 0, validate: { withinTokenAllowance } })}
               />
               <span className="text-xs text-red-400">
-                {errors?.amount?.type === "withinAvailableTokens" && "Vesting contract does not have enough tokens available"}
+                {errors?.amount?.type === "withinTokenAllowance" && "Vesting contract does not have enough tokens available"}
                 {errors?.amount?.type === "min" && "The vesting amount cannot be negative"}
                 {errors?.amount?.type === "required" && "A vesting amount is required"}
               </span>
@@ -172,8 +186,8 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmo
         <ModalActionFooter>
           <div className="flex justify-between items-center w-full">
             <p className="text text-gray-800">
-              {availableAmount && (
-                <>Available tokens to allocate: {formatToken(availableAmount)}</>
+              {tokenAllowance && (
+                <>Available tokens to allocate: {formatToken(tokenAllowance)}</>
               )}
             </p>
             <PrimaryButton type="submit" disabled={isSubmitting}>
@@ -201,7 +215,7 @@ const Vesting = () => {
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
-  const { tokenAddresses, addVestingSchedule, availableAmounts, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
+  const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
   const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
 
   useEffect(() => {
@@ -225,7 +239,7 @@ const Vesting = () => {
         chainId={chainId}
         tokenAddresses={tokenAddresses}
         addVestingSchedule={addVestingSchedule}
-        availableAmounts={availableAmounts}
+        getAdminTokenAllowance={getAdminTokenAllowance}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
