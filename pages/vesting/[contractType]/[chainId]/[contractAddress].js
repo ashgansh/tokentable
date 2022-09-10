@@ -39,11 +39,11 @@ const VestingDashboard = ({ vestingData }) => {
         ))}
       </div>
       {myGrants.length > 0 && (
-        <div>
-          <h2 className="text-lg py-2">Your position</h2>
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg">Your position</h2>
           {myGrants.map(grant => (
             <VestingPosition
-              key={grant.scheduleId}
+              key={grant.id}
               grant={grant}
               chainId={vestingData?.chainId}
               getReleasableAmount={vestingData?.getReleasableAmount}

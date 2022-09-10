@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from "react"
-import { useAccount, useSigner } from "wagmi"
+import { useSigner } from "wagmi"
+import { BigNumber } from "ethers"
 import toast from "react-hot-toast"
 import Moment from "react-moment"
 
-import { useIsDust, useTokenDetails, useTokenFormatter } from "@/lib/tokens"
+import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { classNames } from "@/lib/utils"
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
-import { BigNumber } from "ethers"
 
 const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmount }) => {
   const [isClaiming, setIsClaiming] = useState(false)
   const [releasableAmount, setReleasableAmount] = useState()
   const { data: signer } = useSigner()
-  const { scheduleId, tokenAddress, endTime, startTime } = grant
+  const { id, tokenAddress, endTime, startTime } = grant
   const formatToken = useTokenFormatter(chainId, tokenAddress)
   const {decimals: tokenDecimals} = useTokenDetails(chainId, tokenAddress)
 
@@ -31,16 +31,16 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
     (!isDust(releasableAmount, tokenDecimals, 2) || hasGrantEnded)
 
   const retrieveReleasableAmount = useCallback(() => {
-    if (!scheduleId) return
+    if (!id) return
     if (!getReleasableAmount) return
 
     const retrieveReleasableAmount = async () => {
-      const releasableAmount = await getReleasableAmount(scheduleId)
+      const releasableAmount = await getReleasableAmount(id)
       setReleasableAmount(releasableAmount)
     }
 
     retrieveReleasableAmount()
-  }, [scheduleId, getReleasableAmount])
+  }, [id, getReleasableAmount])
 
   const handleRefreshReleasableAmount = () => {
     setReleasableAmount(null)
@@ -61,7 +61,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
     setIsClaiming(true)
     const toastId = toast.loading("Sign transaction to claim your tokens")
     try {
-      const tx = await releaseAndWithdraw(signer, scheduleId)
+      const tx = await releaseAndWithdraw(signer, id)
       toast.loading(`Claiming your tokens...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully claimed your tokens", { id: toastId })
