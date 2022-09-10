@@ -19,7 +19,7 @@ import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting"
 import { useRouter } from "next/router"
 
 const useVestingContractStore = create((set) => ({
-  step: 1,
+  step: 0,
   vestingContractAddress: null,
   tokenAddress: null,
   goToStep1: (vestingContractAddress, tokenAddress) => set({ step: 1, vestingContractAddress, tokenAddress }),
