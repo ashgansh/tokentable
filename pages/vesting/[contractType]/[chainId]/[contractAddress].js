@@ -193,6 +193,7 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, availableAmo
 const Vesting = () => {
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
+  const { address: account } = useAccount()
   const { query } = useRouter()
   const { contractType, contractAddress, chainId: chainIdString } = query
   const chainId = Number(chainIdString)
@@ -200,10 +201,12 @@ const Vesting = () => {
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
-  const canAddSchedule = !!vestingData?.capabilities?.addVestingSchedule
-  const tokenAddresses = vestingData?.tokenAddresses
+  const { tokenAddresses, addVestingSchedule, availableAmounts, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
+  const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
 
   useEffect(() => {
+    setVestingData(null)
+
     if (!contractType || !contractAddress || !chainId) return
 
     const retrieveVestingData = async () => {
@@ -221,8 +224,8 @@ const Vesting = () => {
         onClose={handleCloseAddScheduleModal}
         chainId={chainId}
         tokenAddresses={tokenAddresses}
-        addVestingSchedule={vestingData?.addVestingSchedule}
-        availableAmounts={vestingData?.availableAmounts}
+        addVestingSchedule={addVestingSchedule}
+        availableAmounts={availableAmounts}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
