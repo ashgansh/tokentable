@@ -1,7 +1,7 @@
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { useRouter } from "next/router"
-import { Fragment, useEffect, useState } from "react"
+import { Fragment, useCallback, useEffect, useState } from "react"
 import { BigNumber } from "ethers"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import { getVestingData } from "@/lib/vesting"
@@ -20,8 +20,6 @@ import VestingPosition from "@/components/VestingPosition"
 const VestingDashboard = ({ vestingData }) => {
   const { address: account } = useAccount()
   const myGrants = vestingData?.grants?.filter(grant => grant.beneficiary === account)
-
-  if (!vestingData) return <>Loading</>
 
   return (
     <div className="flex flex-col gap-4 py-4">
@@ -60,10 +58,10 @@ const VestingDashboard = ({ vestingData }) => {
   )
 }
 
-const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, addVestingSchedule, getAdminTokenAllowance }) => {
-  const { handleSubmit, register, getValues, formState: { errors, isSubmitting } } = useForm()
+const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, addVestingSchedule, getAdminTokenAllowance }) => {
+  const { handleSubmit, register, reset, getValues, formState: { errors, isSubmitting } } = useForm()
   const { address: account } = useAccount()
-  const [ tokenAllowance, setTokenAllowance ] = useState(null)
+  const [tokenAllowance, setTokenAllowance] = useState(null)
   const tokenAddress = tokenAddresses?.[0]
   const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
   const { data: signer } = useSigner()
@@ -114,6 +112,8 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, addVestingSc
       await tx.wait()
       toast.success("Successfully added a schedule to your vesting contract", { id: toastId })
       onClose()
+      onSuccess()
+      reset()
     } catch (e) {
       console.error(e)
 
@@ -161,7 +161,7 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, addVestingSc
               <Label>End</Label>
               <Input
                 type="datetime-local"
-                {...register("end", { required: true, validation: { endIsAfterStart } })}
+                {...register("end", { required: true, validate: { endIsAfterStart } })}
               />
               <span className="text-xs text-red-400">
                 {errors?.end?.type === "endIsAfterStart" && "Vesting cannot end before it has started"}
@@ -207,6 +207,7 @@ const AddScheduleModal = ({ show, onClose, chainId, tokenAddresses, addVestingSc
 const Vesting = () => {
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
   const { address: account } = useAccount()
   const { query } = useRouter()
   const { contractType, contractAddress, chainId: chainIdString } = query
@@ -218,24 +219,29 @@ const Vesting = () => {
   const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
   const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
 
-  useEffect(() => {
-    setVestingData(null)
-
+  const retrieveVestingData = useCallback(() => {
     if (!contractType || !contractAddress || !chainId) return
 
     const retrieveVestingData = async () => {
+      setIsLoading(true)
       const vestingData = await getVestingData(contractType, chainId, contractAddress)
       setVestingData(vestingData)
+      setIsLoading(false)
     }
 
     retrieveVestingData()
   }, [contractType, contractAddress, chainId])
+
+  useEffect(() => {
+    retrieveVestingData()
+  }, [retrieveVestingData])
 
   return (
     <LayoutWrapper>
       <AddScheduleModal
         show={showAddScheduleModal}
         onClose={handleCloseAddScheduleModal}
+        onSuccess={retrieveVestingData}
         chainId={chainId}
         tokenAddresses={tokenAddresses}
         addVestingSchedule={addVestingSchedule}
@@ -248,7 +254,10 @@ const Vesting = () => {
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        <VestingDashboard vestingData={vestingData} />
+        <div>
+          {isLoading && "Loading"}
+          {vestingData && <VestingDashboard vestingData={vestingData} />}
+        </div>
       </div>
     </LayoutWrapper>
   )
