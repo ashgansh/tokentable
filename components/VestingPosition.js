@@ -1,13 +1,13 @@
-import { useTokenFormatter } from "@/lib/tokens"
-import { classNames } from "@/lib/utils"
-import { formatEther } from "ethers/lib/utils"
-import Image from "next/future/image"
 import { useEffect, useState } from "react"
+import { useAccount, useSigner } from "wagmi"
 import toast from "react-hot-toast"
 import Moment from "react-moment"
-import { useSigner } from "wagmi"
-import { PrimaryButton } from "./Button"
-import Spinner from "./Spinner"
+
+import { useIsDust, useTokenDetails, useTokenFormatter } from "@/lib/tokens"
+import { classNames } from "@/lib/utils"
+import { PrimaryButton } from "@/components/Button"
+import Spinner from "@/components/Spinner"
+import { BigNumber } from "ethers"
 
 const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmount }) => {
   const [isClaiming, setIsClaiming] = useState(false)
@@ -15,6 +15,20 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
   const { data: signer } = useSigner()
   const { scheduleId, tokenAddress, endTime, startTime } = grant
   const formatToken = useTokenFormatter(chainId, tokenAddress)
+  const {decimals: tokenDecimals} = useTokenDetails(chainId, tokenAddress)
+
+  const isDust = (amount, decimals, digits) => 
+    amount.lt(BigNumber.from(10).pow(decimals-digits))
+
+  const now = Date.now() / 1000
+  const nowOrVestingEnd = Math.min(now, endTime)
+  const vestingPercentage = Math.round(((nowOrVestingEnd - startTime) / (endTime - startTime)) * 100)
+  const vestingPercentageFormatted = `${vestingPercentage}%`
+
+  const hasAmountToRelease = releasableAmount && releasableAmount.gt(0)
+  const hasGrantEnded = grant?.endTime < now || grant?.isRevoked
+  const showClaimButton = releaseAndWithdraw && hasAmountToRelease && tokenDecimals &&
+    (!isDust(releasableAmount, tokenDecimals, 2) || hasGrantEnded)
 
   useEffect(() => {
     if (!scheduleId) return
@@ -33,11 +47,6 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
       {children}
     </h4>
   )
-
-  const now = Date.now() / 1000
-  const nowOrVestingEnd = Math.min(now, endTime)
-  const vestingPercentage = Math.round(((nowOrVestingEnd - startTime) / (endTime - startTime)) * 100)
-  const vestingPercentageFormatted = `${vestingPercentage}%`
 
   const handleReleaseAndWithdraw = async () => {
     setIsClaiming(true)
@@ -73,7 +82,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
             <ItemTitle>Claimable</ItemTitle>
             <div className="flex gap-4">
               <span className="text-lg">{releasableAmount && formatToken(releasableAmount)}</span>
-              {releasableAmount && releasableAmount.gt(0) && releaseAndWithdraw && (
+              {showClaimButton && (
                 <PrimaryButton className="text-xs py-1.5 px-2" onClick={handleReleaseAndWithdraw} disabled={isClaiming}>
                   <span className="inline-flex items-center gap-1.5">
                     {isClaiming && <Spinner className="h-4 w-4" />}
