@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useAccount, useSigner } from "wagmi"
 import toast from "react-hot-toast"
 import Moment from "react-moment"
@@ -30,7 +30,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
   const showClaimButton = releaseAndWithdraw && hasAmountToRelease && tokenDecimals &&
     (!isDust(releasableAmount, tokenDecimals, 2) || hasGrantEnded)
 
-  useEffect(() => {
+  const retrieveReleasableAmount = useCallback(() => {
     if (!scheduleId) return
     if (!getReleasableAmount) return
 
@@ -41,6 +41,15 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
 
     retrieveReleasableAmount()
   }, [scheduleId, getReleasableAmount])
+
+  const handleRefreshReleasableAmount = () => {
+    setReleasableAmount(null)
+    retrieveReleasableAmount()
+  }
+
+  useEffect(() => {
+    retrieveReleasableAmount()
+  }, [retrieveReleasableAmount])
 
   const ItemTitle = ({ children, className }) => (
     <h4 className={classNames("text-sm text-bold text-gray-900 py-1", className)}>
@@ -56,6 +65,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
       toast.loading(`Claiming your tokens...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully claimed your tokens", { id: toastId })
+      handleRefreshReleasableAmount()
     } catch (e) {
       console.error(e)
 
