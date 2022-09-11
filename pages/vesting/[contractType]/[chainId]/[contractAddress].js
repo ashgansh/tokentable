@@ -1,7 +1,7 @@
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { useRouter } from "next/router"
-import { Fragment, useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { BigNumber } from "ethers"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import { getVestingData } from "@/lib/vesting"
@@ -13,9 +13,10 @@ import { isAddress, parseUnits } from "ethers/lib/utils"
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import Spinner from "@/components/Spinner"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
-import { useAccount, useSigner } from "wagmi"
+import { useAccount, useNetwork, useSigner } from "wagmi"
 import toast from "react-hot-toast"
 import VestingPosition from "@/components/VestingPosition"
+import SwitchChainButton from "@/components/SwitchChainButton"
 
 const VestingDashboard = ({ vestingData }) => {
   const { address: account } = useAccount()
@@ -208,29 +209,33 @@ const Vesting = () => {
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { chain } = useNetwork()
   const { address: account } = useAccount()
   const { query } = useRouter()
-  const { contractType, contractAddress, chainId: chainIdString } = query
-  const chainId = Number(chainIdString)
+  const { contractType, contractAddress, chainId: contractChainIdString } = query
 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
+
+  const contractChainId = Number(contractChainIdString)
+  const currentChainId = chain?.id
   const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
   const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
+  const isConnectedWithCorrectChain = currentChainId === contractChainId
 
   const retrieveVestingData = useCallback(() => {
-    if (!contractType || !contractAddress || !chainId) return
+    if (!contractType || !contractAddress || !contractChainId) return
 
     const retrieveVestingData = async () => {
       setIsLoading(true)
-      const vestingData = await getVestingData(contractType, chainId, contractAddress)
+      const vestingData = await getVestingData(contractType, contractChainId, contractAddress)
       setVestingData(vestingData)
       setIsLoading(false)
     }
 
     retrieveVestingData()
-  }, [contractType, contractAddress, chainId])
+  }, [contractType, contractAddress, contractChainId])
 
   useEffect(() => {
     retrieveVestingData()
@@ -242,7 +247,7 @@ const Vesting = () => {
         show={showAddScheduleModal}
         onClose={handleCloseAddScheduleModal}
         onSuccess={retrieveVestingData}
-        chainId={chainId}
+        chainId={contractChainId}
         tokenAddresses={tokenAddresses}
         addVestingSchedule={addVestingSchedule}
         getAdminTokenAllowance={getAdminTokenAllowance}
@@ -250,7 +255,10 @@ const Vesting = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">{contractType}</h1>
-          {canAddSchedule && <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
+          {canAddSchedule && isConnectedWithCorrectChain &&
+            <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
+          {canAddSchedule && !isConnectedWithCorrectChain &&
+            <SwitchChainButton chainId={contractChainId} />}
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">

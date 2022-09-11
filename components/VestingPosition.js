@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { useSigner } from "wagmi"
+import { useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
 import toast from "react-hot-toast"
 import Moment from "react-moment"
@@ -8,26 +8,42 @@ import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { classNames } from "@/lib/utils"
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
+import SwitchChainButton from "./SwitchChainButton"
+
+const getGrantStatus = (grant) => {
+  const now = Date.now() / 1000
+
+  if (grant.revoked) return "revoked"
+  if (grant.endTime > now) return "vesting"
+
+  return "vested"
+}
 
 const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmount }) => {
   const [isClaiming, setIsClaiming] = useState(false)
   const [releasableAmount, setReleasableAmount] = useState()
   const { data: signer } = useSigner()
+  const { chain } = useNetwork()
   const { id, tokenAddress, endTime, startTime } = grant
   const formatToken = useTokenFormatter(chainId, tokenAddress)
-  const {decimals: tokenDecimals} = useTokenDetails(chainId, tokenAddress)
+  const { decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
 
-  const isDust = (amount, decimals, digits) => 
-    amount.lt(BigNumber.from(10).pow(decimals-digits))
+  const isDust = (amount, decimals, digits) =>
+    amount.lt(BigNumber.from(10).pow(decimals - digits))
 
   const now = Date.now() / 1000
   const nowOrVestingEnd = Math.min(now, endTime)
   const vestingPercentage = Math.round(((nowOrVestingEnd - startTime) / (endTime - startTime)) * 100)
   const vestingPercentageFormatted = `${vestingPercentage}%`
+  const grantStatus = getGrantStatus(grant)
 
+  const currentChainId = chain?.id
+  const isConnectedWithCorrectChain = currentChainId === chainId
+
+  // Don't allow claiming dust (except if the grant has ended)
   const hasAmountToRelease = releasableAmount && releasableAmount.gt(0)
   const hasGrantEnded = grant?.endTime < now || grant?.isRevoked
-  const showClaimButton = releaseAndWithdraw && hasAmountToRelease && tokenDecimals &&
+  const canClaim = releaseAndWithdraw && hasAmountToRelease && tokenDecimals &&
     (!isDust(releasableAmount, tokenDecimals, 2) || hasGrantEnded)
 
   const retrieveReleasableAmount = useCallback(() => {
@@ -87,22 +103,37 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
   return (
     <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
       <div className="flex justify-between items-center">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <div className="flex flex-col">
             <ItemTitle>Claimable</ItemTitle>
-            <div className="flex gap-4">
-              <span className="text-lg">{releasableAmount && formatToken(releasableAmount)}</span>
-              {showClaimButton && (
-                <PrimaryButton className="text-xs py-1.5 px-2" onClick={handleReleaseAndWithdraw} disabled={isClaiming}>
-                  <span className="inline-flex items-center gap-1.5">
-                    {isClaiming && <Spinner className="h-4 w-4" />}
-                    {isClaiming && <span>Claiming</span>}
-                    {!isClaiming && <span>Claim</span>}
-                  </span>
-                </PrimaryButton>
-              )}
-            </div>
+            <span className="text-lg">{releasableAmount && formatToken(releasableAmount)}</span>
           </div>
+          <div>
+            {canClaim && isConnectedWithCorrectChain && (
+              <PrimaryButton onClick={handleReleaseAndWithdraw} disabled={isClaiming}>
+                <span className="inline-flex items-center gap-1.5">
+                  {isClaiming && <Spinner className="h-4 w-4" />}
+                  {isClaiming && <span>Claiming</span>}
+                  {!isClaiming && <span>Claim</span>}
+                </span>
+              </PrimaryButton>
+            )}
+            {canClaim && !isConnectedWithCorrectChain && (
+              <SwitchChainButton chainId={chainId} />
+            )}
+          </div>
+        </div>
+        <div>
+          <ItemTitle>Status</ItemTitle>
+          <span className="text-lg">
+            {grantStatus === "vesting" && "Vesting"}
+            {grantStatus === "revoked" && "Revoked"}
+            {grantStatus === "vested" && "Fully Vested"}
+          </span>
+        </div>
+        <div>
+          <ItemTitle>Allocation</ItemTitle>
+          <span className="text-lg">{grant?.amount && formatToken(grant.amount, { shorten: true })}</span>
         </div>
         <div className="w-48">
           <div className="flex justify-between items-center">
@@ -122,7 +153,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
           </div>
         </div>
       </div>
-    </div >
+    </div>
   )
 }
 
