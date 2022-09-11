@@ -1,20 +1,39 @@
-import { oldFormatToken } from "@/lib/utils"
-import { Fragment } from "react"
+import { useTokenFormatter } from "@/lib/tokens"
 import Moment from "react-moment"
 
-const VestingTable = ({ grants, tokens }) => {
-  const stakeholders = [... new Set(grants.map(grant => grant.beneficiary))]
+const GrantRow = ({ grant, chainId }) => {
+  const formatToken = useTokenFormatter(grant.tokenAddress)
 
-  const tokenFormatter = (tokenAddress, amount) => {
-    const { symbol, decimals } = tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
-    return oldFormatToken(symbol, decimals, amount)
-  }
+  const now = Date.now() / 1000
+  const nowOrVestingEnd = Math.min(now, grant.endTime)
+  const vestingPercentage = Math.round(((nowOrVestingEnd - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
+  const vestingPercentageFormatted = `${vestingPercentage}%`
 
-  const getPercentage = (numerator, denominator) => {
-    const percentage = (numerator.mul(1000).div(denominator).toNumber() / 10).toFixed(2)
-    return `${percentage}%`
-  }
+  return (
+    <tr className="border-t">
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        {grant.beneficiary}
+      </td>
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        {formatToken(grant.amount)}
+      </td>
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        {formatToken(grant.vestedAmount)} ({vestingPercentageFormatted})
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <Moment format="YYYY-MM-DD" unix date={grant.startTime} />
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <Moment format="YYYY-MM-DD" unix date={grant.cliffTime} />
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <Moment format="YYYY-MM-DD" unix date={grant.endTime} />
+      </td>
+    </tr>
+  )
+}
 
+const VestingTable = ({ grants, chainId }) => {
   return (
     <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
@@ -43,30 +62,7 @@ const VestingTable = ({ grants, tokens }) => {
               </tr>
             </thead>
             <tbody className="bg-white">
-              {grants.map((grant, idx) => {
-                return (
-                  <tr key={idx} className="border-t">
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                      {grant.beneficiary}
-                    </td>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                      {tokenFormatter(grant.tokenAddress, grant.amount)}
-                    </td>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                      {tokenFormatter(grant.tokenAddress, grant.vestedAmount)} ({getPercentage(grant.vestedAmount, grant.amount)})
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <Moment format="YYYY-MM-DD" unix date={grant.startTime} />
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <Moment format="YYYY-MM-DD" unix date={grant.cliffTime} />
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <Moment format="YYYY-MM-DD" unix date={grant.endTime} />
-                    </td>
-                  </tr>
-                )
-              })}
+              {grants.map((grant, idx) => <GrantRow key={idx} grant={grant} chainId={chainId} />)}
             </tbody>
           </table>
         </div>

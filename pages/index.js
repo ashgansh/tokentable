@@ -10,12 +10,12 @@ import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/l
 import { portfolioSelector, portfolioStore } from "@/lib/portfolio"
 
 const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
-  const tokenFormatter = useTokenFormatter(chainId, tokenAddress)
+  const formatToken = useTokenFormatter(chainId, tokenAddress)
   const tokenPrice = useTokenPrice(chainId, tokenAddress)
   const tokenCirculatingSupply = useTokenCirculatingSupply(chainId, tokenAddress)
-  const tokenAllocationAmount = +(tokenFormatter(amount, { symbol: null, commify: false }))
+  const tokenAllocationAmount = +(formatToken(amount, { symbol: null, commify: false }))
 
-  const formattedTokenAllocation = tokenFormatter(amount, { shorten: true })
+  const formattedTokenAllocation = formatToken(amount, { shorten: true })
   const formattedDollarAllocation = formatCurrency(tokenPrice * tokenAllocationAmount, 'USD', { shorten: true })
   const formattedCirculatingSupply = formatAmount(tokenCirculatingSupply, { digits: 0 })
 

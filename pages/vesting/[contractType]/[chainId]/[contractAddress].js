@@ -1,22 +1,23 @@
-import VestingInsights from "@/components/VestingInsights"
-import VestingTable from "@/components/VestingTable"
 import { useRouter } from "next/router"
 import { useCallback, useEffect, useState } from "react"
-import { BigNumber } from "ethers"
-import { LayoutWrapper } from "@/components/LayoutWrapper"
-import { getVestingData } from "@/lib/vesting"
-import { PrimaryButton } from "@/components/Button"
-import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
-import { useForm } from "react-hook-form"
-
-import { isAddress, parseUnits } from "ethers/lib/utils"
-import { CurrencyInput, Input, Label } from "@/components/Input"
-import Spinner from "@/components/Spinner"
-import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { useAccount, useNetwork, useSigner } from "wagmi"
+import { BigNumber } from "ethers"
+import { isAddress, parseUnits } from "ethers/lib/utils"
+import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
+
+import { getVestingData } from "@/lib/vesting"
+import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
+
+import { CurrencyInput, Input, Label } from "@/components/Input"
+import { LayoutWrapper } from "@/components/LayoutWrapper"
+import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
+import { PrimaryButton } from "@/components/Button"
+import Spinner from "@/components/Spinner"
 import VestingPosition from "@/components/VestingPosition"
 import SwitchChainButton from "@/components/SwitchChainButton"
+import VestingInsights from "@/components/VestingInsights"
+import VestingTable from "@/components/VestingTable"
 
 const VestingDashboard = ({ vestingData }) => {
   const { address: account } = useAccount()
@@ -32,8 +33,8 @@ const VestingDashboard = ({ vestingData }) => {
             totalAllocated={vestingData.totalAllocatedAmounts?.[tokenAddress] || BigNumber.from(0)}
             totalWithdrawn={vestingData.totalWithdrawnAmounts?.[tokenAddress] || BigNumber.from(0)}
             totalVested={vestingData.totalVestedAmounts?.[tokenAddress] || BigNumber.from(0)}
+            chainId={vestingData.chainId}
             tokenAddress={tokenAddress}
-            tokens={vestingData.tokens}
           />
         ))}
       </div>
@@ -53,7 +54,7 @@ const VestingDashboard = ({ vestingData }) => {
       )}
       <div>
         <h2 className="text-lg py-2">Stakeholders</h2>
-        <VestingTable grants={vestingData.grants} tokens={vestingData.tokens} />
+        <VestingTable grants={vestingData.grants} chainId={vestingData.chainId} />
       </div>
     </div>
   )

@@ -1,34 +1,34 @@
-import { oldFormatToken } from "@/lib/utils"
-import { formatUnits } from "ethers/lib/utils"
-import TokenAmountValue from "./TokenAmountValue"
+import { useTokenFormatter, useTokenPrice } from "@/lib/tokens"
+import { formatCurrency } from "@/lib/utils"
 
-const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, tokens }) => {
-  const tokenFormatter = (tokenAddress, amount) => {
-    const { symbol, decimals } = tokens?.[tokenAddress] || { symbol: '', decimals: 18 }
-    return oldFormatToken(symbol, decimals, amount)
-  }
+const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, chainId }) => {
+  const formatToken = useTokenFormatter(chainId, tokenAddress)
+  const tokenPrice = useTokenPrice(chainId, tokenAddress)
 
-  const tokenFormatterUnits = (tokenAddress, amount) => {
-    const decimals = tokens?.[tokenAddress].decimals || 18
-    return formatUnits(amount, decimals)
+  const getUSDValue = (amount) => {
+    if (!tokenPrice) return
+
+    const formattedAmount = +(formatToken(amount, { symbol: null, commify: false }))
+    const formattedDollarValue = formatCurrency(tokenPrice * formattedAmount, 'USD', { shorten: true })
+    return formattedDollarValue
   }
 
   const stats = [
     {
       name: "Tokens Allocated",
-      stat: tokenFormatter(tokenAddress, totalAllocated),
+      stat: formatToken(totalAllocated, { shorten: true }),
       percentage: null,
       amount: totalAllocated
     },
     {
       name: "Tokens Withdrawn",
-      stat: tokenFormatter(tokenAddress, totalWithdrawn),
+      stat: formatToken(totalWithdrawn, { shorten: true }),
       percentage: totalAllocated > 0 ? totalWithdrawn.mul(10000).div(totalAllocated).toNumber() / 100 : null,
       amount: totalWithdrawn
     },
     {
       name: "Tokens Vested",
-      stat: tokenFormatter(tokenAddress, totalVested),
+      stat: formatToken(totalVested, { shorten: true }),
       percentage: totalAllocated > 0 ? totalVested.mul(10000).div(totalAllocated).toNumber() / 100 : null,
       amount: totalVested
     }
@@ -46,9 +46,9 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
                 {item.percentage !== null && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
               </div>
             </dd>
-              <div className="inline-flex items-baseline py-0.5 text-sm font-medium md:mt-2 lg:mt-0">
-                <TokenAmountValue tokenAddress={tokenAddress} currency="USD">{tokenFormatterUnits(tokenAddress, item.amount)}</TokenAmountValue>
-              </div>
+            <div className="inline-flex items-baseline py-0.5 text-sm font-medium md:mt-2 lg:mt-0">
+              {getUSDValue(item.amount)}
+            </div>
           </div>
         ))}
       </dl>
