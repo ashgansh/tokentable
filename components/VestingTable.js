@@ -6,7 +6,8 @@ const GrantRow = ({ grant, chainId }) => {
 
   const now = Date.now() / 1000
   const nowOrVestingEnd = Math.min(now, grant.endTime)
-  const vestingPercentage = Math.round(((nowOrVestingEnd - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
+  const startOrVestingStart = Math.min(now, grant.startTime)
+  const vestingPercentage = Math.round(((nowOrVestingEnd - startOrVestingStart) / (grant.endTime - grant.startTime)) * 100)
   const vestingPercentageFormatted = `${vestingPercentage}%`
 
   return (

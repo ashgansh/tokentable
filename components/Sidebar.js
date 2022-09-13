@@ -7,8 +7,7 @@ import AccountButton from './AccountButton';
 import { useRouter } from 'next/router';
 
 const navigation = [
-  { name: 'Portfolio', href: '/', icon: RectangleStackIcon, match: "^/vesting/[a-zA-Z0-9]*/0x[a-fA-F0-9]{40}$|/$" },
-  { name: 'Vesting Contracts', href: '/contracts', icon: DocumentChartBarIcon, current: false, match: "^/contracts$" },
+  { name: 'Home', href: '/', icon: RectangleStackIcon, match: "^/vesting/[a-zA-Z0-9]*/[0-9]+/0x[a-fA-F0-9]{40}$|/$" },
 ]
 
 const Sidebar = ({ showMobileSidebar, onClose }) => {

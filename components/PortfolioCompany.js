@@ -29,7 +29,7 @@ const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingE
             <ItemTitle>Vested</ItemTitle>
             <span className="text-sm text-gray-500 py-2.5">{vestingPercentageFormatted}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: vestingPercentageFormatted }}></div>
           </div>
           <div className="flex justify-between items-center">
