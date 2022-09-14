@@ -18,6 +18,7 @@ import VestingPosition from "@/components/VestingPosition"
 import SwitchChainButton from "@/components/SwitchChainButton"
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
+import { portfolioStore } from "@/lib/portfolio"
 
 const VestingDashboard = ({ vestingData }) => {
   const { address: account } = useAccount()
@@ -207,6 +208,7 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
 }
 
 const Vesting = () => {
+  const { addPortfolioItem } = portfolioStore()
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -217,7 +219,6 @@ const Vesting = () => {
 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
-
 
   const contractChainId = Number(contractChainIdString)
   const currentChainId = chain?.id
@@ -237,6 +238,14 @@ const Vesting = () => {
 
     retrieveVestingData()
   }, [contractType, contractAddress, contractChainId])
+
+  useEffect(() => {
+    if(!account || !contractType ||!contractAddress || !contractChainId) return
+
+    console.log('update')
+    addPortfolioItem({chainId: contractChainId, contractType, contractAddress, beneficiaryAddress: account})
+
+  }, [contractType, contractAddress, contractChainId, account, addPortfolioItem])
 
   useEffect(() => {
     retrieveVestingData()
