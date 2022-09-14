@@ -4,7 +4,7 @@ import Link from "next/link"
 import { formatCurrency, formatAmount } from "@/lib/utils"
 import { getVestingData } from "@/lib/vesting"
 import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
-import { portfolioSelector, portfolioStore, usePortfolioItems } from "@/lib/portfolio"
+import { usePortfolioItems } from "@/lib/portfolio"
 
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import PortfolioCompany from "@/components/PortfolioCompany"

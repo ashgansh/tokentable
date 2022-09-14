@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@gnosis.pm/safe-apps-provider": "^0.13.1",
+    "@gnosis.pm/safe-apps-sdk": "^7.8.0",
+    "@gnosis.pm/safe-apps-wagmi": "^1.0.3",
     "@headlessui/react": "^1.6.6",
     "@heroicons/react": "^2.0.10",
     "@rainbow-me/rainbowkit": "^0.5.1",
@@ -23,7 +26,7 @@
     "react-hook-form": "^7.34.2",
     "react-hot-toast": "^2.3.0",
     "react-moment": "^1.1.2",
-    "wagmi": "^0.6.4",
+    "wagmi": "^0.5.12",
     "zustand": "^4.1.1"
   },
   "devDependencies": {

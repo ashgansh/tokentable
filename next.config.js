@@ -6,7 +6,18 @@ const nextConfig = {
     images: {
       allowFutureImage: true
     }
-  }
+  },
+  headers: async () => ([
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+  ])
 }
 
 module.exports = nextConfig
