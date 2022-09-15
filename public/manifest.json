@@ -1,9 +1,9 @@
 {
-  "name": "Token Ops",
+  "name": "TokenOps",
   "description": "Create, track, and automate token vesting schedules.",
   "icons": [
     {
-      "src": "vercelogo.svg",
+      "src": "/logos/tokenops.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
