@@ -1,7 +1,7 @@
 import { useTokenFormatter } from "@/lib/tokens"
 import Moment from "react-moment"
 
-const GrantRow = ({ grant, chainId }) => {
+const GrantRow = ({ grant }) => {
   const formatToken = useTokenFormatter(grant.tokenAddress)
 
   const now = Date.now() / 1000
@@ -34,7 +34,31 @@ const GrantRow = ({ grant, chainId }) => {
   )
 }
 
-const VestingTable = ({ grants, chainId }) => {
+const LoadingGrantRow = () => (
+    <tr className="border-t">
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        <div className="w-56 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      </td>
+    </tr>
+)
+
+const VestingTable = ({ grants, chainId, isLoading }) => {
+  console.log(isLoading)
   return (
     <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
@@ -64,6 +88,7 @@ const VestingTable = ({ grants, chainId }) => {
             </thead>
             <tbody className="bg-white">
               {grants.map((grant, idx) => <GrantRow key={idx} grant={grant} chainId={chainId} />)}
+              {isLoading && <LoadingGrantRow />}
             </tbody>
           </table>
         </div>

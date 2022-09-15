@@ -1,7 +1,7 @@
 import { useTokenFormatter, useTokenPrice } from "@/lib/tokens"
 import { formatCurrency } from "@/lib/utils"
 
-const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, chainId }) => {
+const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAddress, chainId, isLoading }) => {
   const formatToken = useTokenFormatter(chainId, tokenAddress)
   const tokenPrice = useTokenPrice(chainId, tokenAddress)
 
@@ -9,8 +9,7 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
     if (!tokenPrice) return
 
     const formattedAmount = +(formatToken(amount, { symbol: null, commify: false }))
-    const formattedDollarValue = formatCurrency(tokenPrice * formattedAmount, 'USD', { shorten: true })
-    return formattedDollarValue
+    return formatCurrency(tokenPrice * formattedAmount, 'USD', { shorten: true })
   }
 
   const stats = [
@@ -41,10 +40,14 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
           <div key={item.name} className="px-4 py-5 sm:p-6">
             <dt className="text-base font-normal text-gray-900">{item.name}</dt>
             <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-              <div className="flex items-baseline text-2xl font-semibold text-tokenops-primary-700">
-                {item.stat}
-                {item.percentage !== null && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
-              </div>
+              {isLoading ? (
+                <div className="w-36 bg-gray-300 rounded-md animate-pulse text-2xl font-semibold items-baseline">&nbsp;</div>
+              ) : (
+                <div className="flex items-baseline text-2xl font-semibold text-tokenops-primary-700">
+                  {item.stat}
+                  {item.percentage !== null && <span className="ml-2 text-sm font-medium text-gray-500">{item.percentage}%</span>}
+                </div>
+              )}
             </dd>
             <div className="inline-flex items-baseline py-0.5 text-sm font-medium md:mt-2 lg:mt-0">
               {getUSDValue(item.amount)}
