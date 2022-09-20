@@ -244,13 +244,6 @@ const Vesting = () => {
   }, [contractAddress, contractChainId])
 
   useEffect(() => {
-    if (!account || !contractAddress || !contractChainId) return
-
-    addPortfolioItem({ chainId: contractChainId, contractAddress })
-
-  }, [contractAddress, contractChainId, account, addPortfolioItem])
-
-  useEffect(() => {
     retrieveVestingData()
   }, [retrieveVestingData])
 

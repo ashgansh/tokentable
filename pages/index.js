@@ -71,7 +71,6 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
           }
         })
       )
-
       setVestingContracts(vestingContracts)
     }
     retrieveVestingData()
