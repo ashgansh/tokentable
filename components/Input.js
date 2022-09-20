@@ -31,7 +31,7 @@ export const CurrencyInput = forwardRef(function CurrencyInput ({ symbol, childr
 })
 
 export const Label = ({ className, children }) => (
-  <label className={classNames("block text-sm font-medium pb-1", className)}>
+  <label className={classNames("block text-sm pb-1", className)}>
     {children}
   </label>
 )

@@ -7,9 +7,14 @@ import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/l
 import { usePortfolioItems } from "@/lib/portfolio"
 import { useHasHydrated } from "@/lib/hooks"
 
-import { LayoutWrapper } from "@/components/LayoutWrapper"
-import PortfolioCompany from "@/components/PortfolioCompany"
-import { QueueListIcon } from "@heroicons/react/24/outline"
+import { LayoutWrapper } from "@/components/LayoutWrapper";
+import PortfolioCompany from "@/components/PortfolioCompany";
+import { QueueListIcon } from "@heroicons/react/24/outline";
+import { useForm } from "react-hook-form";
+import { Input, Label } from "@/components/Input";
+import { isAddress } from "ethers/lib/utils";
+import axios from "axios";
+import Spinner from "@/components/Spinner";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
@@ -38,16 +43,73 @@ const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffT
       allocationUSD={formattedDollarAllocation}
       circulatingSupply={formattedCirculatingSupply}
     />
-  )
-}
+  );
+};
 
-const NoPortfolioItems = () => (
-  <div className="flex flex-col items-center text-center m-12">
-    <QueueListIcon className="h-12 w-12" />
-    <h3 className="mt-2 text-lg font-medium text-gray-900">No vesting contracts</h3>
-    <p className="mt-1 text-sm text-gray-500">We {"can't"} find your vesting contract. Please ask the vesting contract admin for the vesting contract link.</p>
-  </div>
-)
+const NoPortfolioItems = () => {
+  const {
+    reset,
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitSuccessful, isSubmitting },
+  } = useForm();
+
+  const handleAddContract = async (data) => {
+    await axios.post("https://formspree.io/f/xaykqkok", data);
+    reset();
+  };
+
+  return (
+    <div className="flex flex-col items-center text-center m-12 w-full">
+
+      <QueueListIcon className="h-12 w-12 stroke-gray-300" />
+      <h2 className="mt-2 text-lg font-medium text-gray-900">
+        Track Vesting Schedules
+      </h2>
+      <p className="mt-1 text-sm text-gray-500">
+        {`
+      Start tracking your first vesting contract
+`}
+      </p>
+      <form
+        onSubmit={handleSubmit(handleAddContract)}
+        className="mt-6 flex max-w-2xl"
+      >
+            <Input
+              placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
+              className="min-w-[350px]"
+              {...register("vestingContract", {
+                required: true,
+                validate: { isAddress },
+              })}
+            />
+            <span className="text-xs text-red-400">
+              {errors?.beneficiaryAddress && "A valid vesting address is required"}
+            </span>
+
+        <button
+          type="submit"
+          className="ml-4 flex-shrink-0 rounded-md border border-transparent bg-tokenops-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-tokenops-primary700 focus:outline-none focus:ring-2 focus:ring-tokenops-primary500 focus:ring-offset-2"
+        >
+          Track your vesting
+        </button>
+      </form>
+      {isSubmitSuccessful && (
+        <>
+          <div className="py-12 items-center flex flex-col gap-4">
+            <span>
+              <Spinner className="text-tokenops-primary-600 h-8" />
+            </span>
+            <span>
+              {"We're indexing your contract. This may take up to a 24h."}
+            </span>
+            <span>{"Please check back again later."}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
   const [vestingContracts, setVestingContracts] = useState([])
@@ -79,10 +141,20 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       {myVestingGrants.map((portfolioItem, index) => {
-        const { companyName, companyLogoURL, chainId, contractType, contractAddress } = portfolioItem.meta
-        const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
+        const {
+          companyName,
+          companyLogoURL,
+          chainId,
+          contractType,
+          contractAddress,
+        } = portfolioItem.meta;
+        const { startTime, endTime, cliffTime, amount, tokenAddress } =
+          portfolioItem.beneficiaryGrant;
         return (
-          <Link key={`portfolio-item-${index}`} href={`/vesting/${chainId}/${contractAddress}`}>
+          <Link
+            key={`portfolio-item-${index}`}
+            href={`/vesting/${chainId}/${contractAddress}`}
+          >
             <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
               <PortfolioItem
                 key={index}
@@ -97,11 +169,11 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
               />
             </div>
           </Link>
-        )
+        );
       })}
     </div>
-  )
-}
+  );
+};
 
 const Portfolio = () => {
   const hasHydrated = useHasHydrated()
@@ -123,7 +195,7 @@ const Home = () => {
         <Portfolio />
       </div>
     </LayoutWrapper>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
