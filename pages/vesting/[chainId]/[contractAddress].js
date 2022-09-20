@@ -6,7 +6,7 @@ import { isAddress, parseUnits } from "ethers/lib/utils"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
 
-import { getVestingData } from "@/lib/vesting"
+import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 
 import { CurrencyInput, Input, Label } from "@/components/Input"
@@ -212,11 +212,12 @@ const Vesting = () => {
   const { addPortfolioItem } = portfolioStore()
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
+  const [vestingMetaData, setVestingMetaData] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const { chain } = useNetwork()
   const { address: account } = useAccount()
   const { query } = useRouter()
-  const { contractType, contractAddress, chainId: contractChainIdString } = query
+  const { contractAddress, chainId: contractChainIdString } = query
 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
@@ -228,25 +229,26 @@ const Vesting = () => {
   const isConnectedWithCorrectChain = currentChainId === contractChainId
 
   const retrieveVestingData = useCallback(() => {
-    if (!contractType || !contractAddress || !contractChainId) return
+    if (!contractAddress || !contractChainId) return
 
     const retrieveVestingData = async () => {
+      const { meta, getVestingData} = getVestingContractDetails(contractChainId, contractAddress)
+      setVestingMetaData(meta)
       setIsLoading(true)
-      const vestingData = await getVestingData(contractType, contractChainId, contractAddress)
+      const vestingData = await getVestingData()
       setVestingData(vestingData)
       setIsLoading(false)
     }
 
     retrieveVestingData()
-  }, [contractType, contractAddress, contractChainId])
+  }, [contractAddress, contractChainId])
 
   useEffect(() => {
-    if (!account || !contractType || !contractAddress || !contractChainId) return
+    if (!account || !contractAddress || !contractChainId) return
 
-    console.log('update')
-    addPortfolioItem({ chainId: contractChainId, contractType, contractAddress, beneficiaryAddress: account })
+    addPortfolioItem({ chainId: contractChainId, contractAddress })
 
-  }, [contractType, contractAddress, contractChainId, account, addPortfolioItem])
+  }, [contractAddress, contractChainId, account, addPortfolioItem])
 
   useEffect(() => {
     retrieveVestingData()
@@ -266,7 +268,7 @@ const Vesting = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 items-center">
-            <h1 className="text-2xl font-semibold text-gray-900">{contractType}</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{vestingMetaData?.companyName || vestingData?.contractAddress}</h1>
             {isLoading && <Spinner className="h-5 w-5" />}
           </div>
           {canAddSchedule && isConnectedWithCorrectChain &&

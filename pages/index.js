@@ -84,7 +84,7 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
         const { companyName, companyLogoURL, chainId, contractType, contractAddress } = portfolioItem.meta
         const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
         return (
-          <Link key={`portfolio-item-${index}`} href={`/vesting/${contractType}/${chainId}/${contractAddress}`}>
+          <Link key={`portfolio-item-${index}`} href={`/vesting/${chainId}/${contractAddress}`}>
             <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
               <PortfolioItem
                 key={index}
