@@ -2,15 +2,22 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 
 import { formatCurrency, formatAmount } from "@/lib/utils"
-import { getVestingData } from "@/lib/vesting"
+import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
 import { usePortfolioItems } from "@/lib/portfolio"
+import { useHasHydrated } from "@/lib/hooks"
 
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import PortfolioCompany from "@/components/PortfolioCompany"
 import { QueueListIcon } from "@heroicons/react/24/outline"
 
-const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
+const BENEFICIARY_ADDRESSES = [
+  "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
+  "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
+  "0xe774b24115EBF630bF4f3690F442176938DdF61E"
+]
+
+const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
   const formatToken = useTokenFormatter(chainId, tokenAddress)
   const tokenPrice = useTokenPrice(chainId, tokenAddress)
   const tokenCirculatingSupply = useTokenCirculatingSupply(chainId, tokenAddress)
@@ -23,7 +30,7 @@ const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime
   return (
     <PortfolioCompany
       companyName={companyName}
-      companyLogo={companyLogo}
+      companyLogoURL={companyLogoURL}
       vestingStartTime={startTime}
       vestingEndTime={endTime}
       vestingCliffTime={cliffTime}
@@ -42,36 +49,39 @@ const NoPortfolioItems = () => (
   </div>
 )
 
-const Portfolio = () => {
-  const portfolioItemObject = usePortfolioItems()
-  const portfolioItems = Object.values(portfolioItemObject)
-  const [portfolioVestingContracts, setPortfolioVestingContracts] = useState([])
-  const portfolioVestingGrants = portfolioVestingContracts.reduce((grants, portfolioItem) => {
-    const { vestingContract, meta } = portfolioItem
-    const beneficiaryGrants = vestingContract.grants?.filter(grant => grant.beneficiary === meta.beneficiaryAddress) || []
-    const newGrants = beneficiaryGrants.map(beneficiaryGrant => ({ meta, beneficiaryGrant, vestingContract }))
+export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
+  const [vestingContracts, setVestingContracts] = useState([])
+  const myVestingGrants = vestingContracts.reduce((grants, portfolioItem) => {
+    const { vestingData, meta } = portfolioItem
+    const beneficiaryGrants = vestingData.grants?.filter(grant => beneficiaryAddresses.includes(grant.beneficiary)) || []
+    const newGrants = beneficiaryGrants.map(beneficiaryGrant => ({ meta, beneficiaryGrant, vestingData }))
     return [...grants, ...newGrants]
   }, [])
 
   useEffect(() => {
+    if (portfolioItems.length === 0) return
+
     const retrieveVestingData = async () => {
       const vestingContracts = await Promise.all(
-        portfolioItems.map(async (portfolioItem) => ({
-          meta: portfolioItem,
-          vestingContract: await getVestingData(portfolioItem.contractType, portfolioItem.chainId, portfolioItem.contractAddress)
-        }))
+        portfolioItems.map(async (portfolioItem) => {
+          const {meta, getVestingData} = getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
+          console.log(meta)
+          return {
+            meta: meta,
+            vestingData: await getVestingData()
+          }
+        })
       )
-      setPortfolioVestingContracts(vestingContracts)
+
+      setVestingContracts(vestingContracts)
     }
     retrieveVestingData()
   }, [portfolioItems])
 
-  if (portfolioItems.length === 0) return <NoPortfolioItems />
-
   return (
     <div className="flex flex-col gap-4 py-4">
-      {portfolioVestingGrants.map((portfolioItem, index) => {
-        const { companyName, companyLogo, chainId, contractType, contractAddress } = portfolioItem.meta
+      {myVestingGrants.map((portfolioItem, index) => {
+        const { companyName, companyLogoURL, chainId, contractType, contractAddress } = portfolioItem.meta
         const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
         return (
           <Link key={`portfolio-item-${index}`} href={`/vesting/${contractType}/${chainId}/${contractAddress}`}>
@@ -79,7 +89,7 @@ const Portfolio = () => {
               <PortfolioItem
                 key={index}
                 companyName={companyName}
-                companyLogo={companyLogo}
+                companyLogoURL={companyLogoURL}
                 startTime={startTime}
                 endTime={endTime}
                 cliffTime={cliffTime}
@@ -93,6 +103,19 @@ const Portfolio = () => {
       })}
     </div>
   )
+}
+
+const Portfolio = () => {
+  const hasHydrated = useHasHydrated()
+  const portfolioItemObject = usePortfolioItems()
+  const portfolioItems = Object.values(portfolioItemObject)
+  const beneficiaryAddresses = BENEFICIARY_ADDRESSES
+
+  if (!hasHydrated) return <></>
+
+  if (portfolioItems.length === 0) return <NoPortfolioItems />
+
+  return <PortfolioItemList portfolioItems={portfolioItems} beneficiaryAddresses={beneficiaryAddresses} />
 }
 
 const Home = () => {

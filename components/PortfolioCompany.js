@@ -2,13 +2,12 @@ import { classNames } from "@/lib/utils"
 import Image from "next/future/image"
 import Moment from "react-moment"
 
-const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, circulatingSupply }) => {
+const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, circulatingSupply }) => {
   const ItemTitle = ({ children, className }) => (
     <h4 className={classNames("text-sm text-bold text-gray-900 py-1.5", className)}>
       {children}
     </h4>
   )
-
   const now = Date.now() / 1000
   const nowOrVestingEnd = Math.min(now, vestingEndTime)
   const vestingPercentage = Math.round(((nowOrVestingEnd - vestingStartTime) / (vestingEndTime - vestingStartTime)) * 100)
@@ -21,7 +20,8 @@ const PortfolioCompany = ({ companyName, companyLogo, vestingStartTime, vestingE
           <ItemTitle>Company</ItemTitle>
           <div className="flex justify-between">
             <span className="text-xl">{companyName}</span>
-            <Image src={companyLogo} alt="Company Logo" className="h-8 w-max" />
+            { /* eslint-disable-next-line @next/next/no-img-element */ }
+            <img src={companyLogoURL} alt="Company Logo" className="h-8 w-max" />
           </div>
         </div>
         <div>
