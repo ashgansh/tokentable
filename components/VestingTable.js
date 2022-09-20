@@ -1,8 +1,8 @@
 import { useTokenFormatter } from "@/lib/tokens"
 import Moment from "react-moment"
 
-const GrantRow = ({ grant }) => {
-  const formatToken = useTokenFormatter(grant.tokenAddress)
+const GrantRow = ({ grant, chainId }) => {
+  const formatToken = useTokenFormatter(chainId, grant.tokenAddress)
 
   const now = Date.now() / 1000
   const nowOrVestingEnd = Math.min(now, grant.endTime)
