@@ -8,6 +8,7 @@ import { usePortfolioItems } from "@/lib/portfolio"
 
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import PortfolioCompany from "@/components/PortfolioCompany"
+import { QueueListIcon } from "@heroicons/react/24/outline"
 
 const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
   const formatToken = useTokenFormatter(chainId, tokenAddress)
@@ -33,8 +34,17 @@ const PortfolioItem = ({ companyName, companyLogo, startTime, endTime, cliffTime
   )
 }
 
+const NoPortfolioItems = () => (
+  <div className="flex flex-col items-center text-center m-12">
+    <QueueListIcon className="h-12 w-12" />
+    <h3 className="mt-2 text-lg font-medium text-gray-900">No vesting contracts</h3>
+    <p className="mt-1 text-sm text-gray-500">We {"can't"} find your vesting contract. Please ask the vesting contract admin for the vesting contract link.</p>
+  </div>
+)
+
 const Portfolio = () => {
-  const portfolioItems = usePortfolioItems()
+  const portfolioItemObject = usePortfolioItems()
+  const portfolioItems = Object.values(portfolioItemObject)
   const [portfolioVestingContracts, setPortfolioVestingContracts] = useState([])
   const portfolioVestingGrants = portfolioVestingContracts.reduce((grants, portfolioItem) => {
     const { vestingContract, meta } = portfolioItem
@@ -46,7 +56,7 @@ const Portfolio = () => {
   useEffect(() => {
     const retrieveVestingData = async () => {
       const vestingContracts = await Promise.all(
-        Object.values(portfolioItems).map(async (portfolioItem) => ({
+        portfolioItems.map(async (portfolioItem) => ({
           meta: portfolioItem,
           vestingContract: await getVestingData(portfolioItem.contractType, portfolioItem.chainId, portfolioItem.contractAddress)
         }))
@@ -55,6 +65,8 @@ const Portfolio = () => {
     }
     retrieveVestingData()
   }, [portfolioItems])
+
+  if (portfolioItems.length === 0) return <NoPortfolioItems />
 
   return (
     <div className="flex flex-col gap-4 py-4">
