@@ -19,6 +19,7 @@ import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
 import { chainId, useAccount } from "wagmi";
 import { useRouter } from "next/router";
+import { portfolioStore } from "../lib/portfolio";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
@@ -78,15 +79,22 @@ const NoPortfolioItems = () => {
   } = useForm();
   const { push } = useRouter()
 
+  const { addPortfolioItem, removePortfolioItem, isInPortfolio } = portfolioStore()
+
   const handleAddContract = async (data) => {
     console.log(data)
     // chainId 1 hardcoded map this to network selection
+
     const details = await getVestingContractDetails(1, data.vestingContract)
     console.log(details)
     const isIndexed = !!details?.meta.contractAddress
     if (isIndexed) {
       console.log(isIndexed)
-      push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
+      const isBookmarked = isInPortfolio({ contractAddress: details.meta.contractAddress, chaindId: details.meta.chainId })
+      if (isBookmarked) return
+      console.log('reach')
+      addPortfolioItem({ contractAddress: details.meta.contractAddress, chainId: details.meta.chaindId })
+      // push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
       return
     }
     await axios.post("https://formspree.io/f/xaykqkok", data);
