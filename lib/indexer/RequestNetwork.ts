@@ -82,12 +82,12 @@ const getWithdrawals = async (contract) => {
 
 const getTokensAndAdmins = async (contract, chainId) => {
   const depositEvents = await contract.queryFilter("Deposit");
-  const tokenAddresses = [
-    ...new Set(depositEvents.map((log) => log.args.token)),
-  ];
-  const admins = [...new Set(depositEvents.map((log) => log.args.granter))];
-  const tokenDetails  = await Promise.all(
-    tokenAddresses.map(async (tokenAddress) => ({
+  const tokenAddresses = Array.from(
+    new Set(depositEvents.map((log) => log.args.token)).values()
+  );
+  const admins = Array.from(new Set(depositEvents.map((log) => log.args.granter)).values())
+  const tokenDetails = await Promise.all(
+    tokenAddresses.map(async (tokenAddress: string) => ({
       tokenAddress,
       ...(await getTokenDetails(chainId, tokenAddress)),
     }))

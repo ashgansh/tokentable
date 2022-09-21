@@ -8,7 +8,7 @@ export interface IVestingData {
   totalVestedAmounts: { [key: string]: BigNumber };
   tokens: { [key: string]: IToken };
   capabilities?: ICapabilities;
-  admins?: string[] | null;
+  admins?: any; // FIXME
   addVestingSchedule?: (signer: string, schedule: any) => Promise<any>;
   getReleasableAmount?: (id: string) => Promise<any>;
   releaseAndWithdraw?: (signer: any, id: any) => Promise<any>;

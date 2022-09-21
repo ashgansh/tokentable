@@ -2,7 +2,6 @@ import { BigNumber, Contract } from "ethers";
 
 import { DOPEX_VESTING_CONTRACT_ABI } from "@/lib/contracts/DopexVesting";
 import { getProvider } from "@/lib/provider";
-import { IVestingData } from "@/lib/type";
 
 const getTokenAddress = async (contract: Contract) => await contract.dpx();
 const getTokenDetails = async (chainId, tokenAddress) => {
@@ -148,7 +147,7 @@ const releaseAndWithdrawCallback = (contract) => async (signer, grantId) => {
 export const getVestingData = async (
   chainId: number,
   contractAddress: string
-): IVestingData => {
+) => {
   const provider = getProvider(chainId);
   const contract = new Contract(
     contractAddress,

@@ -15,11 +15,12 @@
         "styles/*"
       ]
     },
-    "target": "es5",
+    "target": "ES5",
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "esnext",
+      "ES5"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -31,7 +32,8 @@
     "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "moduleResolution": "node"
   },
   "include": [
     "next-env.d.ts",
