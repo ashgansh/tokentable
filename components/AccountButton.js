@@ -42,7 +42,7 @@ const AccountButton = () => {
           }
           return (
             <div className="flex items-center justify-between text-sm text-gray-500">
-              <button onClick={openAccountModal} type="button" className="text-left grow p-4">
+              <button onClick={openAccountModal} type="button" className="text-left grow ">
                 {account.displayName}
               </button>
               <button onClick={disconnect} type="button" className="p-4">

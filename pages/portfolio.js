@@ -80,7 +80,7 @@ const NoPortfolioItems = () => {
   };
 
   return (
-    <div className="flex flex-col items-center text-center m-12 w-full">
+    <div className="flex flex-col items-center text-center m-12">
 
       <QueueListIcon className="h-12 w-12 stroke-gray-300" />
       <h2 className="mt-2 text-lg font-medium text-gray-900">
