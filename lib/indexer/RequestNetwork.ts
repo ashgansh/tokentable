@@ -1,5 +1,4 @@
 import { BigNumber, Contract } from "ethers";
-import { formatEther, parseEther } from "ethers/lib/utils";
 import { REQUEST_VESTING_ABI } from "../constants";
 import { getProvider } from "../provider";
 import { IVestingData } from "../type";
@@ -87,7 +86,7 @@ const getTokensAndAdmins = async (contract, chainId) => {
     ...new Set(depositEvents.map((log) => log.args.token)),
   ];
   const admins = [...new Set(depositEvents.map((log) => log.args.granter))];
-  const tokenDetails = await Promise.all(
+  const tokenDetails  = await Promise.all(
     tokenAddresses.map(async (tokenAddress) => ({
       tokenAddress,
       ...(await getTokenDetails(chainId, tokenAddress)),

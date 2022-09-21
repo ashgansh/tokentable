@@ -1,5 +1,5 @@
 import { LayoutWrapper } from "@/components/LayoutWrapper"
-import { PortfolioItemList } from "pages"
+import { PortfolioItemList } from "pages/portfolio"
 
 
 const PORTFOLIO_ITEMS = [
