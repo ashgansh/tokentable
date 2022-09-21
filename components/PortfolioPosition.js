@@ -1,8 +1,8 @@
-import { classNames } from "@/lib/utils"
+import { classNames, shortAddress } from "@/lib/utils"
 import Image from "next/future/image"
 import Moment from "react-moment"
 
-const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, circulatingSupply }) => {
+const PortfolioPosition = ({ companyName, companyLogoURL, vestingStartTime, vestingEndTime, vestingCliffTime, allocationUSD, allocationToken, circulatingSupply, contractAddress }) => {
   const ItemTitle = ({ children, className }) => (
     <h4 className={classNames("text-sm text-bold text-gray-900 py-1.5", className)}>
       {children}
@@ -17,11 +17,11 @@ const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vesti
     <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6 overflow-scroll">
       <div className="grid grid-rows-1 grid-cols-[repeat(2,minmax(180px,1fr))_repeat(3,minmax(0,1fr))_60px] grid-flow-col gap-x-20 gap-y-4">
         <div className="">
-          <ItemTitle>Company</ItemTitle>
+          <ItemTitle>{companyName ? 'Company' : 'Contract'}</ItemTitle>
           <div className="flex justify-between">
-            <span className="text-xl">{companyName}</span>
-            { /* eslint-disable-next-line @next/next/no-img-element */ }
-            <img src={companyLogoURL} alt="Company Logo" className="h-8 w-max" />
+            <span className="text-xl">{companyName || shortAddress(contractAddress, 8)}</span>
+            { /* eslint-disable-next-line @next/next/no-img-element */}
+            {companyLogoURL && <img src={companyLogoURL} alt={companyName} className="h-8 w-auto" />}
           </div>
         </div>
         <div>
@@ -47,8 +47,12 @@ const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vesti
           <div className="text-gray-500 text-xs">{allocationToken}</div>
         </div>
         <div>
-          <ItemTitle>Circulating Supply</ItemTitle>
-          <div className="text-bold">{circulatingSupply}</div>
+          {circulatingSupply && (
+            <>
+              <ItemTitle>Circulating Supply</ItemTitle>
+              <div className="text-bold">{circulatingSupply}</div>
+            </>
+          )}
         </div>
         <div>
           <ItemTitle>Cliff</ItemTitle>
@@ -69,4 +73,4 @@ const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vesti
   )
 }
 
-export default PortfolioCompany
+export default PortfolioPosition

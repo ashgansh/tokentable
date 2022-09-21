@@ -13,17 +13,18 @@ import { usePortfolioItems } from "@/lib/portfolio"
 import { useHasHydrated } from "@/lib/hooks"
 
 import PortfolioContract from "@/components/PortfolioContract"
-import PortfolioCompany from "@/components/PortfolioCompany";
+import PortfolioPosition from "@/components/PortfolioPosition";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
+import { useAccount } from "wagmi";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
   "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
 ]
 
-const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
+const PortfolioItem = ({ contractAddress, companyName, companyLogoURL, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
   const formatToken = useTokenFormatter(chainId, tokenAddress)
   const tokenPrice = useTokenPrice(chainId, tokenAddress)
   const tokenCirculatingSupply = useTokenCirculatingSupply(chainId, tokenAddress)
@@ -31,10 +32,11 @@ const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffT
 
   const formattedTokenAllocation = formatToken(amount, { shorten: true })
   const formattedDollarAllocation = formatCurrency(tokenPrice * tokenAllocationAmount, 'USD', { shorten: true })
-  const formattedCirculatingSupply = formatAmount(tokenCirculatingSupply, { digits: 0 })
+  const formattedCirculatingSupply = tokenCirculatingSupply ? formatAmount(tokenCirculatingSupply, { digits: 0 }) : null;
 
   return (
-    <PortfolioCompany
+    <PortfolioPosition
+      contractAddress={contractAddress}
       companyName={companyName}
       companyLogoURL={companyLogoURL}
       vestingStartTime={startTime}
@@ -174,6 +176,7 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
           <Link key={`position-${index}`} href={`/vesting/${chainId}/${contractAddress}`}>
             <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
               <PortfolioItem
+                contractAddress={contractAddress}
                 companyName={companyName}
                 companyLogoURL={companyLogoURL}
                 startTime={startTime}
@@ -224,7 +227,8 @@ const Portfolio = () => {
   const hasHydrated = useHasHydrated()
   const portfolioItemObject = usePortfolioItems()
   const portfolioItems = Object.values(portfolioItemObject)
-  const beneficiaryAddresses = BENEFICIARY_ADDRESSES
+  const { address: account } = useAccount()
+  const beneficiaryAddresses = [account] || BENEFICIARY_ADDRESSES
 
   if (!hasHydrated) return <></>
 

@@ -46,7 +46,7 @@ export default function Example() {
             >
               {NavList.map((navItem) => (
                 <Link href={navItem.link} key={navItem.name}>
-                  <li  className="cursor-pointer rounded-md border  bg-white px-4 py-5 sm:px-6 bg-white shadow sm:rounded-lg">
+                  <li className="cursor-pointer rounded-md border  bg-white px-4 py-5 sm:px-6 bg-white shadow sm:rounded-lg">
                     <div className="space-y-4">
                       <div className="aspect-w-3 aspect-h-2 flex justify-center">
                         <navItem.icon className="w-16 h-16 stroke-gray-300 stroke-1" />
@@ -63,6 +63,9 @@ export default function Example() {
               ))}
             </ul>
           </div>
+          {/* <div className="space-y-5 sm:space-y-4 md:max-w-xl lg:max-w-3xl xl:max-w-none mt-3">
+            <h2 className="text-xl font-bold tracking-tight sm:text-4xl">My Vestings</h2>
+         </div> */}
         </div>
       </div>
     </div>

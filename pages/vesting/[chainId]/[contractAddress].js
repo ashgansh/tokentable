@@ -12,13 +12,15 @@ import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
-import { PrimaryButton } from "@/components/Button"
+import { PrimaryButton, SecondaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import VestingPosition from "@/components/VestingPosition"
 import SwitchChainButton from "@/components/SwitchChainButton"
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { portfolioStore } from "@/lib/portfolio"
+import { BookmarkIcon } from "@heroicons/react/24/outline"
+import { shortAddress } from "@/lib/utils"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   const { address: account } = useAccount()
@@ -28,7 +30,7 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
     <div className="flex flex-col gap-4 py-4">
       <div>
         <h2 className="text-lg py-2">Vesting overview</h2>
-        {Object.keys(vestingData?.tokens || {'dummyToken': 'ok'}).map(tokenAddress => (
+        {Object.keys(vestingData?.tokens || { 'dummyToken': 'ok' }).map(tokenAddress => (
           <VestingInsights
             key={tokenAddress}
             totalAllocated={vestingData?.totalAllocatedAmounts?.[tokenAddress] || BigNumber.from(0)}
@@ -208,6 +210,17 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
   )
 }
 
+const BookmarkButton = ({ contractAddress, chainId }) => {
+  const { addPortfolioItem } = portfolioStore()
+  const handleAddPortfolioItem = () => {
+    addPortfolioItem({ contractAddress, chainId })
+  }
+
+  return <SecondaryButton className="flex gap-1 items-center " onClick={handleAddPortfolioItem}>Add to portfolio <BookmarkIcon className="h-6 w-6 stroke-2" /></SecondaryButton>
+
+
+}
+
 const Vesting = () => {
   const { addPortfolioItem } = portfolioStore()
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
@@ -232,7 +245,7 @@ const Vesting = () => {
     if (!contractAddress || !contractChainId) return
 
     const retrieveVestingData = async () => {
-      const { meta, getVestingData} = await getVestingContractDetails(contractChainId, contractAddress)
+      const { meta, getVestingData } = await getVestingContractDetails(contractChainId, contractAddress)
       setVestingMetaData(meta)
       setIsLoading(true)
       const vestingData = await getVestingData()
@@ -261,9 +274,18 @@ const Vesting = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 items-center">
-            <h1 className="text-2xl font-semibold text-gray-900">{vestingMetaData?.companyName || vestingData?.contractAddress}</h1>
-            {isLoading && <Spinner className="h-5 w-5" />}
+            <div className="flex justify-between w-full">
+              {vestingMetaData?.companyName && (
+                <h1 className="text-2xl font-semibold text-gray-800">{vestingMetaData?.companyName}</h1>
+              )}
+              {!vestingMetaData?.companyName && (
+                <h1 className="text-gray-800">{vestingMetaData?.contractAddress}</h1>
+              )}
+
+            </div>
           </div>
+
+          <BookmarkButton chainId={contractChainId} contractAddress={contractAddress} />
           {canAddSchedule && isConnectedWithCorrectChain &&
             <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
           {canAddSchedule && !isConnectedWithCorrectChain &&
