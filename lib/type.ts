@@ -1,7 +1,4 @@
-import { BigNumber, Contract } from "ethers";
-import { formatEther, parseEther } from "ethers/lib/utils";
-import { REQUEST_VESTING_ABI } from "./constants";
-import { getProvider } from "./provider";
+import { BigNumber } from "ethers";
 
 export interface IVestingData {
   grants?: IGrants[] | null;

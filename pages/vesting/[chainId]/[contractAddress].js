@@ -4,6 +4,7 @@ import { useAccount, useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
 import { isAddress, parseUnits } from "ethers/lib/utils"
 import { useForm } from "react-hook-form"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
 import toast from "react-hot-toast"
 
 import { useConnectModal } from "@rainbow-me/rainbowkit"
@@ -11,6 +12,7 @@ import { BookmarkIcon } from "@heroicons/react/24/outline"
 
 import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
+import { portfolioStore } from "@/lib/portfolio"
 
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
@@ -21,7 +23,6 @@ import VestingPosition from "@/components/VestingPosition"
 import SwitchChainButton from "@/components/SwitchChainButton"
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
-import { portfolioStore } from "@/lib/portfolio"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   const { address: account } = useAccount()
@@ -244,7 +245,6 @@ const ConnectCTA = () => {
 }
 
 const Vesting = () => {
-  const { addPortfolioItem } = portfolioStore()
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
   const [vestingMetaData, setVestingMetaData] = useState({})
