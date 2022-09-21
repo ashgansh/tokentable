@@ -47,7 +47,7 @@ const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffT
   );
 };
 
-const PortfolioContractItem = ({contractAddress, companyLogoURL, companyName, totalAllocatedAmount, totalVestedAmount, stakeholderCount, tokenAddress, chainId}) => {
+const PortfolioContractItem = ({ contractAddress, companyLogoURL, companyName, totalAllocatedAmount, totalVestedAmount, stakeholderCount, tokenAddress, chainId }) => {
   const formatToken = useTokenFormatter(chainId, tokenAddress)
 
   const formattedTokenAllocation = formatToken(totalAllocatedAmount)
@@ -95,17 +95,17 @@ const NoPortfolioItems = () => {
         onSubmit={handleSubmit(handleAddContract)}
         className="mt-6 flex max-w-2xl"
       >
-            <Input
-              placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
-              className="min-w-[350px]"
-              {...register("vestingContract", {
-                required: true,
-                validate: { isAddress },
-              })}
-            />
-            <span className="text-xs text-red-400">
-              {errors?.beneficiaryAddress && "A valid vesting address is required"}
-            </span>
+        <Input
+          placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
+          className="min-w-[350px]"
+          {...register("vestingContract", {
+            required: true,
+            validate: { isAddress },
+          })}
+        />
+        <span className="text-xs text-red-400">
+          {errors?.beneficiaryAddress && "A valid vesting address is required"}
+        </span>
 
         <button
           type="submit"
@@ -132,6 +132,7 @@ const NoPortfolioItems = () => {
 };
 
 export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
+  const [isLoading, setIsLoading] = useState(false)
   const [vestingContracts, setVestingContracts] = useState([])
   const myVestingGrants = vestingContracts.reduce((grants, contract) => {
     const { vestingData, meta } = contract
@@ -147,9 +148,10 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
     if (portfolioItems.length === 0) return
 
     const retrieveVestingData = async () => {
+      setIsLoading(true)
       const vestingContracts = await Promise.all(
         portfolioItems.map(async (portfolioItem) => {
-          const {meta, getVestingData} = await getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
+          const { meta, getVestingData } = await getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
           return {
             meta,
             vestingData: await getVestingData()
@@ -157,12 +159,14 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
         })
       )
       setVestingContracts(vestingContracts)
+      setIsLoading(false)
     }
     retrieveVestingData()
   }, [portfolioItems])
 
   return (
     <div className="flex flex-col gap-4 py-4">
+      {isLoading && 'Loading'}
       {myVestingGrants.map((portfolioItem, index) => {
         const { companyName, companyLogoURL, chainId, contractAddress } = portfolioItem.meta
         const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
