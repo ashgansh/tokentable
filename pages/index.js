@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form";
+import { isAddress } from "ethers/lib/utils";
+import axios from "axios";
 import Link from "next/link"
+
+import { QueueListIcon } from "@heroicons/react/24/outline";
 
 import { formatCurrency, formatAmount } from "@/lib/utils"
 import { getVestingContractDetails } from "@/lib/vesting"
@@ -7,19 +12,15 @@ import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/l
 import { usePortfolioItems } from "@/lib/portfolio"
 import { useHasHydrated } from "@/lib/hooks"
 
-import { LayoutWrapper } from "@/components/LayoutWrapper";
+import PortfolioContract from "@/components/PortfolioContract"
 import PortfolioCompany from "@/components/PortfolioCompany";
-import { QueueListIcon } from "@heroicons/react/24/outline";
-import { useForm } from "react-hook-form";
-import { Input, Label } from "@/components/Input";
-import { isAddress } from "ethers/lib/utils";
-import axios from "axios";
+import { LayoutWrapper } from "@/components/LayoutWrapper";
+import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
   "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
-  "0xe774b24115EBF630bF4f3690F442176938DdF61E"
 ]
 
 const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffTime, amount, tokenAddress, chainId }) => {
@@ -45,6 +46,25 @@ const PortfolioItem = ({ companyName, companyLogoURL, startTime, endTime, cliffT
     />
   );
 };
+
+const PortfolioContractItem = ({contractAddress, companyLogoURL, companyName, totalAllocatedAmount, totalVestedAmount, stakeholderCount, tokenAddress, chainId}) => {
+  const formatToken = useTokenFormatter(chainId, tokenAddress)
+
+  const formattedTokenAllocation = formatToken(totalAllocatedAmount)
+  const formattedTokenVested = formatToken(totalVestedAmount)
+
+  return (
+    <PortfolioContract
+      companyLogoURL={companyLogoURL}
+      companyName={companyName}
+      contractAddress={contractAddress}
+      totalAllocatedAmount={formattedTokenAllocation}
+      totalVestedAmount={formattedTokenVested}
+      stakeholderCount={stakeholderCount}
+    />
+  )
+}
+
 
 const NoPortfolioItems = () => {
   const {
@@ -113,12 +133,15 @@ const NoPortfolioItems = () => {
 
 export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
   const [vestingContracts, setVestingContracts] = useState([])
-  const myVestingGrants = vestingContracts.reduce((grants, portfolioItem) => {
-    const { vestingData, meta } = portfolioItem
+  const myVestingGrants = vestingContracts.reduce((grants, contract) => {
+    const { vestingData, meta } = contract
     const beneficiaryGrants = vestingData.grants?.filter(grant => beneficiaryAddresses.includes(grant.beneficiary)) || []
     const newGrants = beneficiaryGrants.map(beneficiaryGrant => ({ meta, beneficiaryGrant, vestingData }))
     return [...grants, ...newGrants]
   }, [])
+
+  const myTrackedContracts = vestingContracts.filter(contract => contract.vestingData.grants?.filter(grant => beneficiaryAddresses.includes(grant.beneficiary)).length === 0)
+  const myIndexingContracts = vestingContracts.filter(contract => !contract.vestingData)
 
   useEffect(() => {
     if (portfolioItems.length === 0) return
@@ -128,7 +151,7 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
         portfolioItems.map(async (portfolioItem) => {
           const {meta, getVestingData} = getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
           return {
-            meta: meta,
+            meta,
             vestingData: await getVestingData()
           }
         })
@@ -141,23 +164,12 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       {myVestingGrants.map((portfolioItem, index) => {
-        const {
-          companyName,
-          companyLogoURL,
-          chainId,
-          contractType,
-          contractAddress,
-        } = portfolioItem.meta;
-        const { startTime, endTime, cliffTime, amount, tokenAddress } =
-          portfolioItem.beneficiaryGrant;
+        const { companyName, companyLogoURL, chainId, contractAddress } = portfolioItem.meta
+        const { startTime, endTime, cliffTime, amount, tokenAddress } = portfolioItem.beneficiaryGrant
         return (
-          <Link
-            key={`portfolio-item-${index}`}
-            href={`/vesting/${chainId}/${contractAddress}`}
-          >
+          <Link key={`position-${index}`} href={`/vesting/${chainId}/${contractAddress}`}>
             <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
               <PortfolioItem
-                key={index}
                 companyName={companyName}
                 companyLogoURL={companyLogoURL}
                 startTime={startTime}
@@ -170,6 +182,35 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
             </div>
           </Link>
         );
+      })}
+      {myTrackedContracts.map((contract, index) => {
+        const { companyName, companyLogoURL, chainId, contractAddress } = contract.meta
+        const { totalAllocatedAmounts, totalVestedAmounts, tokens, grants } = contract.vestingData
+
+        const tokenAddress = Object.keys(tokens).shift()
+        if (!tokenAddress) <></>
+
+        const totalAllocatedAmount = totalAllocatedAmounts[tokenAddress]
+        const totalVestedAmount = totalVestedAmounts[tokenAddress]
+        const stakeholders = new Set(grants.filter(grant => grant.tokenAddress === tokenAddress).map(grant => grant.beneficiary))
+        const stakeholderCount = stakeholders.size
+        return (
+          <Link key={`portfolio-item-${index}`} href={`/vesting/${chainId}/${contractAddress}`}>
+            <div className="hover:cursor-pointer hover:shadow-md rounded-lg">
+              <PortfolioContractItem
+                key={`tracked-${index}`}
+                companyName={companyName}
+                companyLogoURL={companyLogoURL}
+                contractAddress={contractAddress}
+                totalAllocatedAmount={totalAllocatedAmount}
+                totalVestedAmount={totalVestedAmount}
+                stakeholderCount={stakeholderCount}
+                tokenAddress={tokenAddress}
+                chainId={chainId}
+              />
+            </div>
+          </Link>
+        )
       })}
     </div>
   );

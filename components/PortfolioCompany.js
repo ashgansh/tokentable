@@ -14,7 +14,7 @@ const PortfolioCompany = ({ companyName, companyLogoURL, vestingStartTime, vesti
   const vestingPercentageFormatted = `${vestingPercentage}%`
 
   return (
-    <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
+    <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6 overflow-scroll">
       <div className="grid grid-rows-1 grid-cols-[repeat(2,minmax(180px,1fr))_repeat(3,minmax(0,1fr))_60px] grid-flow-col gap-x-20 gap-y-4">
         <div className="">
           <ItemTitle>Company</ItemTitle>
