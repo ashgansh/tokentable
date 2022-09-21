@@ -160,7 +160,7 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress, goToNex
                 <input
                   type="text"
                   id="beneficiary"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
                   placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
                   {...register("beneficiary", { required: true, validate: { isAddress } })}
                 />
@@ -177,7 +177,7 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress, goToNex
                 <input
                   type="datetime-local"
                   id="start"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
                   {...register("start", { required: true })}
                 />
               </div>
@@ -194,7 +194,7 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress, goToNex
                 <input
                   type="datetime-local"
                   id="end"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
                   {...register("end", { required: true, validate: { endIsAfterStart } })}
                 />
               </div>
@@ -212,7 +212,7 @@ const AddFirstStakeholderStep = ({ vestingContractAddress, tokenAddress, goToNex
                 <input
                   type="number"
                   id="tokenAmount"
-                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
                   placeholder="0.00"
                   {...register("tokenAmount", { required: true, min: 0, validate: { withinBalance } })}
                 />
@@ -310,7 +310,7 @@ const FundVestingContractStep = ({ vestingContractAddress, tokenAddress, goToNex
               <input
                 type="number"
                 id="tokenAmount"
-                className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="block w-full rounded-md border-gray-300 pr-12 focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
                 placeholder="0.00"
                 {...register("tokenAmount", { required: true, min: 0, validate: { withinBalance } })}
               />
@@ -471,7 +471,7 @@ const CreateVestingContractStep = ({ goToNextStep }) => {
               type="text"
               name="tokenAddress"
               id="tokenAddress"
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-tokenops-primary-500 focus:ring-tokenops-primary-500 sm:text-sm"
               placeholder="0x6B175474E89094C44Da98b954EedeAC495271d0F"
               {...register("tokenAddress", { required: true })}
             />
@@ -580,7 +580,7 @@ const Contracts = () => {
         <h1 className="text-2xl font-semibold text-gray-900">Create a Vesting Contract</h1>
       </div>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-8">
-        <div className="bg-white shadow sm:rounded-lg">
+        <div >
           <div className="flex gap-8 py-6 px-4 sm:p-6">
             <CreateVestingContractProgressBar currentStep={step} />
             <div className="flex-grow">
