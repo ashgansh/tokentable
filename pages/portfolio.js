@@ -17,7 +17,8 @@ import PortfolioPosition from "@/components/PortfolioPosition";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
-import { useAccount } from "wagmi";
+import { chainId, useAccount } from "wagmi";
+import { useRouter } from "next/router";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
@@ -75,8 +76,19 @@ const NoPortfolioItems = () => {
     handleSubmit,
     formState: { errors, isSubmitSuccessful, isSubmitting },
   } = useForm();
+  const { push } = useRouter()
 
   const handleAddContract = async (data) => {
+    console.log(data)
+    // chainId 1 hardcoded map this to network selection
+    const details = await getVestingContractDetails(1, data.vestingContract)
+    console.log(details)
+    const isIndexed = !!details?.meta.contractAddress
+    if (isIndexed) {
+      console.log(isIndexed)
+      push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
+      return
+    }
     await axios.post("https://formspree.io/f/xaykqkok", data);
     reset();
   };
@@ -232,9 +244,11 @@ const Portfolio = () => {
 
   if (!hasHydrated) return <></>
 
-  if (portfolioItems.length === 0) return <NoPortfolioItems />
 
-  return <PortfolioItemList portfolioItems={portfolioItems} beneficiaryAddresses={beneficiaryAddresses} />
+  return <>
+    <NoPortfolioItems />
+    <PortfolioItemList portfolioItems={portfolioItems} beneficiaryAddresses={beneficiaryAddresses} />
+  </>
 }
 
 const Home = () => {
