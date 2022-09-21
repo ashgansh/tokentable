@@ -4,11 +4,9 @@ import { useAccount, useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
 import { isAddress, parseUnits } from "ethers/lib/utils"
 import { useForm } from "react-hook-form"
-import { useConnectModal } from "@rainbow-me/rainbowkit"
+import { BookmarkIcon as BookmarkIconOutline } from "@heroicons/react/24/outline"
+import { BookmarkIcon as BookmarkIconSolid } from "@heroicons/react/24/solid"
 import toast from "react-hot-toast"
-
-import { useConnectModal } from "@rainbow-me/rainbowkit"
-import { BookmarkIcon } from "@heroicons/react/24/outline"
 
 import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
@@ -213,12 +211,27 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
 }
 
 const BookmarkButton = ({ contractAddress, chainId }) => {
-  const { addPortfolioItem } = portfolioStore()
+  const { addPortfolioItem, removePortfolioItem, isInPortfolio } = portfolioStore()
+  const isBookmarked = isInPortfolio({ contractAddress, chainId })
+
   const handleAddPortfolioItem = () => {
     addPortfolioItem({ contractAddress, chainId })
   }
 
-  return <SecondaryButton className="flex gap-1 items-center " onClick={handleAddPortfolioItem}>Add to portfolio <BookmarkIcon className="h-6 w-6 stroke-2" /></SecondaryButton>
+  const handleRemovePorfolioItem = () => {
+    removePortfolioItem({ contractAddress, chainId })
+  }
+
+  const handleClickBookmark = () => {
+    isBookmarked ? handleRemovePorfolioItem() : handleAddPortfolioItem()
+  }
+
+  return (
+    <SecondaryButton className="flex gap-1 items-center " onClick={handleClickBookmark}>
+      {!isBookmarked && <>Add to portfolio <BookmarkIconOutline className="h-6 w-6 stroke-2" /></>}
+      {isBookmarked && <>Remove from portfolio <BookmarkIconSolid className="h-6 w-6 stroke-2" /></>}
+    </SecondaryButton>
+  )
 }
 
 const ConnectCTA = () => {
@@ -249,7 +262,6 @@ const Vesting = () => {
   const [vestingData, setVestingData] = useState(null)
   const [vestingMetaData, setVestingMetaData] = useState({})
   const [isLoading, setIsLoading] = useState(true)
-  const { openConnectModal } = useConnectModal()
   const { chain } = useNetwork()
   const { address: account } = useAccount()
   const { query } = useRouter()
@@ -308,9 +320,6 @@ const Vesting = () => {
             </div>
           </div>
           <BookmarkButton chainId={contractChainId} contractAddress={contractAddress} />
-          {!account &&
-            <PrimaryButton onClick={openConnectModal}>Connect Wallet</PrimaryButton>
-          }
           {canAddSchedule && isConnectedWithCorrectChain &&
             <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
           {canAddSchedule && !isConnectedWithCorrectChain &&
