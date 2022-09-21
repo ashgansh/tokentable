@@ -232,7 +232,7 @@ const Vesting = () => {
     if (!contractAddress || !contractChainId) return
 
     const retrieveVestingData = async () => {
-      const { meta, getVestingData} = getVestingContractDetails(contractChainId, contractAddress)
+      const { meta, getVestingData} = await getVestingContractDetails(contractChainId, contractAddress)
       setVestingMetaData(meta)
       setIsLoading(true)
       const vestingData = await getVestingData()

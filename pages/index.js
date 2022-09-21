@@ -149,7 +149,7 @@ export const PortfolioItemList = ({ portfolioItems, beneficiaryAddresses }) => {
     const retrieveVestingData = async () => {
       const vestingContracts = await Promise.all(
         portfolioItems.map(async (portfolioItem) => {
-          const {meta, getVestingData} = getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
+          const {meta, getVestingData} = await getVestingContractDetails(portfolioItem.chainId, portfolioItem.contractAddress)
           return {
             meta,
             vestingData: await getVestingData()
