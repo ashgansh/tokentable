@@ -79,13 +79,9 @@ const NoPortfolioItems = () => {
   const { push } = useRouter()
 
   const handleAddContract = async (data) => {
-    console.log(data)
-    // chainId 1 hardcoded map this to network selection
     const details = await getVestingContractDetails(1, data.vestingContract)
-    console.log(details)
-    const isIndexed = !!details?.meta.contractAddress
+    const isIndexed = !!details?.meta.contractType
     if (isIndexed) {
-      console.log(isIndexed)
       push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
       return
     }
