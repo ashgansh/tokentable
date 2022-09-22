@@ -15,7 +15,7 @@ const NavList = [
     name: 'I want to start tracking my vesting schedules',
     role: 'For employees/investors',
     icon: QueueList,
-    link: '/portfolio'
+    link: '/search'
 
   },
   {
