@@ -4,14 +4,14 @@ import { useAccount, useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
 import { isAddress, parseUnits } from "ethers/lib/utils"
 import { useForm } from "react-hook-form"
-import { BookmarkIcon as BookmarkIconOutline } from "@heroicons/react/24/outline"
+import { BookmarkIcon as BookmarkIconOutline, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkIconSolid } from "@heroicons/react/24/solid"
 import toast from "react-hot-toast"
 
 import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { portfolioStore } from "@/lib/portfolio"
-import { formatAddress } from "@/lib/utils"
+import { formatAddress, classNames } from "@/lib/utils"
 
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
@@ -22,6 +22,7 @@ import VestingPosition from "@/components/VestingPosition"
 import SwitchChainButton from "@/components/SwitchChainButton"
 import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
+import { useConnectModal } from "@rainbow-me/rainbowkit"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   const { address: account } = useAccount()
@@ -43,6 +44,7 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
           />
         ))}
       </div>
+      <ConnectCTA />
       {myGrants.length > 0 && (
         <div className="flex flex-col gap-4">
           <h2 className="text-lg">Your position</h2>
@@ -236,22 +238,36 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
 }
 
 const ConnectCTA = () => {
+  const { address: account, isConnecting } = useAccount()
+  const [isClosed, setIsClosed] = useState(false)
+  const { openConnectModal } = useConnectModal()
+  const showCTA = !isClosed && !account && !isConnecting
+
+  const handleClose = () => setIsClosed(true)
+
+
   return (
-    <div className="bg-indigo-50">
-      <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:flex lg:items-center lg:justify-between lg:py-24 lg:px-8">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-          <span className="block">Ready to dive in?</span>
-          <span className="block text-indigo-600">Start your free trial today.</span>
-        </h2>
-        <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-          <div className="inline-flex rounded-md shadow">
-            <a
-              href="#"
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-5 py-3 text-base font-medium text-white hover:bg-indigo-700"
-            >
-              Get started
-            </a>
-          </div>
+    <div className={classNames("rounded-lg bg-tokenops-primary-600 p-2 shadow sm:p-3", !showCTA && "hidden")}>
+      <div className="flex flex-wrap items-center justify-between">
+        <div className="flex w-0 flex-1 items-center">
+          <p className="ml-3 truncate font-medium text-white">
+            <span>Are you a stakeholder? Connect your wallet to claim your vested tokens.</span>
+          </p>
+        </div>
+        <div className="order-3 mt-2 w-full flex-shrink-0 sm:order-2 sm:mt-0 sm:w-auto">
+          <SecondaryButton onClick={openConnectModal}>
+            Connect
+          </SecondaryButton>
+        </div>
+        <div className="order-2 flex-shrink-0 sm:order-3 sm:ml-2">
+          <button
+            type="button"
+            className="-mr-1 flex rounded-md p-2 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-white"
+            onClick={handleClose}
+          >
+            <span className="sr-only">Dismiss</span>
+            <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </div>

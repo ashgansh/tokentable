@@ -110,7 +110,7 @@ const NoPortfolioItems = () => {
         Track Vesting Schedules
       </h2>
       <p className="mt-1 text-sm text-gray-500">
-        {`Start tracking your first vesting contract`}
+        {`Start tracking your first vesting contract. We don't store any personal identifiable information.`}
       </p>
       <div>
         <form
@@ -137,7 +137,7 @@ const NoPortfolioItems = () => {
           </button>
         </form>
         <div className="mt-6 w-full">
-          <h3 className="text-sm font-medium text-gray-500">No vesting contract? Pick one of these vesting contracts to try it out</h3>
+          <h3 className="text-sm text-gray-500">No vesting contract? Pick one of these vesting contracts to try it out</h3>
           <ul role="list" className="mt-4 divide-y divide-gray-200 border-t border-b border-gray-200 text-left">
             {exampleContracts.map(contract => (
               <li key={contract.address} className="flex items-center justify-between space-x-3 py-2">
