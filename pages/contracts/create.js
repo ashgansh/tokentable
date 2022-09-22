@@ -573,7 +573,7 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
 const Contracts = () => {
   const { push } = useRouter()
   const { step, tokenAddress, vestingContractAddress, goToStep1, goToStep2 } = useVestingContractStore()
-  const goToVestingPage = () => push(`/vesting/tokenops/5/${vestingContractAddress}`)
+  const goToVestingPage = () => push(`/vesting/5/${vestingContractAddress}`)
   return (
     <LayoutWrapper>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
