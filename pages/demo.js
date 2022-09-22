@@ -9,7 +9,7 @@ const PORTFOLIO_ITEMS = [
   },
   {
     chainId: 1,
-    contractAddress: "0x2a7d59e327759acd5d11a8fb652bf4072d28ac04",
+    contractAddress: "0x2A7d59E327759acd5d11A8fb652Bf4072d28AC04",
   },
 ]
 

@@ -11,6 +11,7 @@ import toast from "react-hot-toast"
 import { getVestingContractDetails } from "@/lib/vesting"
 import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
 import { portfolioStore } from "@/lib/portfolio"
+import { formatAddress } from "@/lib/utils"
 
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
@@ -269,8 +270,9 @@ const Vesting = () => {
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
-  const { contractAddress, chainId: contractChainIdString } = query
+  const { contractAddress: contractAddressUnformatted, chainId: contractChainIdString } = query
   const contractChainId = Number(contractChainIdString)
+  const contractAddress = formatAddress(contractAddressUnformatted)
   const currentChainId = chain?.id
   const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
   const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
