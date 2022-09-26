@@ -11,6 +11,12 @@ const GrantRow = ({ grant, chainId }) => {
   const vestedPercentage = grant.vestedAmount.mul(10000).div(grant.amount).toNumber() / 100
   const vestedPercentageFormatted = `${vestedPercentage}%`
 
+  const vestedStatus = () => {
+    if (grant.revoked && grant.revokedTime < Date.now() / 1000) return "Revoked"
+    if (vestedPercentage < 100) return "Vesting"
+    return "Finished"
+  }
+
   const beneficiaryLink = getAddressBlockExplorerLink(chainId, grant.beneficiary)
 
   const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(grant.beneficiary)
@@ -27,6 +33,9 @@ const GrantRow = ({ grant, chainId }) => {
             <ClipboardIcon className="h-4" />
           </span>
         </div>
+      </td>
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+        {vestedStatus()}
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
         {formatToken(grant.amount)}
@@ -61,6 +70,9 @@ const LoadingGrantRow = () => (
       <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
     <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
       <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -88,6 +100,9 @@ const VestingTable = ({ grants, chainId, isLoading }) => {
               <tr>
                 <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
                   Stakeholder
+                </th>
+                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                  Status
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Allocation
