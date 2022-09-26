@@ -40,22 +40,25 @@ const getGrants = async (contract) => {
             tokenAddress === revokedGrant.args?.token
         )
         .shift()?.blockNumber || null;
+
     const revokedTime = revokedBlock
-      ? await contract.provider.getBlock(revokedBlock).timestamp
+      ? (await contract.provider.getBlock(revokedBlock)).timestamp
       : null;
+
+    const vestedAmount = getVestedAmount(
+      startTime?.toNumber(),
+      endTime?.toNumber(),
+      revokedTime,
+      cliffTime?.toNumber(),
+      amount
+    );
     const id = `${tokenAddress}-${granter}-${beneficiary}-${log.blockNumber}`;
     return {
       id,
       beneficiary,
       tokenAddress,
-      amount: amount,
-      vestedAmount: getVestedAmount(
-        startTime?.toNumber(),
-        endTime?.toNumber(),
-        revokedTime,
-        cliffTime?.toNumber(),
-        amount
-      ),
+      amount,
+      vestedAmount,
       startTime: startTime?.toNumber(),
       endTime: endTime?.toNumber(),
       cliffTime: cliffTime?.toNumber(),
@@ -85,7 +88,9 @@ const getTokensAndAdmins = async (contract, chainId) => {
   const tokenAddresses = Array.from(
     new Set(depositEvents.map((log) => log.args.token)).values()
   );
-  const admins = Array.from(new Set(depositEvents.map((log) => log.args.granter)).values())
+  const admins = Array.from(
+    new Set(depositEvents.map((log) => log.args.granter)).values()
+  );
   const tokenDetails = await Promise.all(
     tokenAddresses.map(async (tokenAddress: string) => ({
       tokenAddress,

@@ -1,25 +1,38 @@
-import { useTokenFormatter } from "@/lib/tokens"
 import Moment from "react-moment"
+
+import { ClipboardIcon, LinkIcon } from "@heroicons/react/24/outline"
+
+import { useTokenFormatter } from "@/lib/tokens"
+import { shortAddress } from "@/lib/utils"
+import { getAddressBlockExplorerLink } from "@/lib/provider"
 
 const GrantRow = ({ grant, chainId }) => {
   const formatToken = useTokenFormatter(chainId, grant.tokenAddress)
+  const vestedPercentage = grant.vestedAmount.mul(10000).div(grant.amount).toNumber() / 100
+  const vestedPercentageFormatted = `${vestedPercentage}%`
 
-  const now = Date.now() / 1000
-  const nowOrVestingEnd = Math.min(now, grant.endTime)
-  const startOrVestingStart = Math.min(now, grant.startTime)
-  const vestingPercentage = Math.round(((nowOrVestingEnd - startOrVestingStart) / (grant.endTime - grant.startTime)) * 100)
-  const vestingPercentageFormatted = `${vestingPercentage}%`
+  const beneficiaryLink = getAddressBlockExplorerLink(chainId, grant.beneficiary)
+
+  const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(grant.beneficiary)
 
   return (
     <tr className="border-t">
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {grant.beneficiary}
+        <div className="flex gap-1">
+          {shortAddress(grant.beneficiary)}
+          <a className="hover:cursor-pointer" href={beneficiaryLink} alt="Block Explorer Link" target="_blank" rel="noreferrer">
+            <LinkIcon className="text-gray-500 h-4" />
+          </a>
+          <span className="hover:cursor-pointer" onClick={copyBeneficiaryToClipboard}>
+            <ClipboardIcon className="text-gray-500 h-4" />
+          </span>
+        </div>
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
         {formatToken(grant.amount)}
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(grant.vestedAmount)} ({vestingPercentageFormatted})
+        {formatToken(grant.vestedAmount)} ({vestedPercentageFormatted})
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         <Moment format="YYYY-MM-DD" unix date={grant.startTime} />
@@ -30,31 +43,39 @@ const GrantRow = ({ grant, chainId }) => {
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         <Moment format="YYYY-MM-DD" unix date={grant.endTime} />
       </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        {grant.revokedTime && (
+          <Moment format="YYYY-MM-DD" unix date={grant.revokedTime} />
+        )}
+      </td>
     </tr>
   )
 }
 
 const LoadingGrantRow = () => (
-    <tr className="border-t">
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        <div className="w-56 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-      </td>
-    </tr>
+  <tr className="border-t">
+    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+      <div className="w-32 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+      <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
+  </tr>
 )
 
 const VestingTable = ({ grants, chainId, isLoading }) => {
@@ -82,6 +103,9 @@ const VestingTable = ({ grants, chainId, isLoading }) => {
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   End
+                </th>
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Revoked
                 </th>
               </tr>
             </thead>
