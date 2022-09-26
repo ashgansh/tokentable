@@ -18,13 +18,13 @@ const GrantRow = ({ grant, chainId }) => {
   return (
     <tr className="border-t">
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        <div className="flex gap-1">
+        <div className="flex gap-1 group">
           {shortAddress(grant.beneficiary)}
-          <a className="hover:cursor-pointer" href={beneficiaryLink} alt="Block Explorer Link" target="_blank" rel="noreferrer">
-            <LinkIcon className="text-gray-500 h-4" />
+          <a className="invisible group-hover:visible hover:cursor-pointer text-gray-500 hover:text-gray-900" href={beneficiaryLink} alt="Block Explorer Link" target="_blank" rel="noreferrer">
+            <LinkIcon className="h-4" />
           </a>
-          <span className="hover:cursor-pointer" onClick={copyBeneficiaryToClipboard}>
-            <ClipboardIcon className="text-gray-500 h-4" />
+          <span className="invisible group-hover:visible hover:cursor-pointer text-gray-500 hover:text-gray-900" onClick={copyBeneficiaryToClipboard}>
+            <ClipboardIcon className="h-4" />
           </span>
         </div>
       </td>
