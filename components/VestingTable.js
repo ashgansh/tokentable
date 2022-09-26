@@ -12,7 +12,7 @@ const GrantRow = ({ grant, chainId }) => {
   const vestedPercentageFormatted = `${vestedPercentage}%`
 
   const vestedStatus = () => {
-    if (grant.revoked && grant.revokedTime < Date.now() / 1000) return "Revoked"
+    if (grant.isRevoked && grant.revokedTime < Date.now() / 1000) return "Revoked"
     if (vestedPercentage < 100) return "Vesting"
     return "Finished"
   }
