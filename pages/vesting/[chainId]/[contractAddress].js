@@ -44,7 +44,7 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
           />
         ))}
       </div>
-      <ConnectCTA />
+      <ConnectCTA hasGrants={myGrants.length > 0} />
       {myGrants.length > 0 && (
         <div className="flex flex-col gap-4">
           <h2 className="text-lg">Your position</h2>
@@ -237,14 +237,17 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   )
 }
 
-const ConnectCTA = () => {
+const ConnectCTA = ({ hasGrants }) => {
   const { address: account, isConnecting } = useAccount()
   const [isClosed, setIsClosed] = useState(false)
   const { openConnectModal } = useConnectModal()
-  const showCTA = !isClosed && !account && !isConnecting
+
+  const showCTA = !isClosed && (
+    (!account && !isConnecting) ||
+    (account && !hasGrants)
+  )
 
   const handleClose = () => setIsClosed(true)
-
 
   return (
     <div className={classNames("rounded-lg bg-tokenops-primary-600 p-2 shadow sm:p-3", !showCTA && "hidden")}>
@@ -334,14 +337,15 @@ const Vesting = () => {
               {!vestingMetaData?.companyName && (
                 <h1 className="text-gray-800">{vestingMetaData?.contractAddress}</h1>
               )}
-
             </div>
           </div>
-          <BookmarkButton chainId={contractChainId} contractAddress={contractAddress} />
-          {canAddSchedule && isConnectedWithCorrectChain &&
-            <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
-          {canAddSchedule && !isConnectedWithCorrectChain &&
-            <SwitchChainButton chainId={contractChainId} />}
+          <div className="flex gap-2">
+            <BookmarkButton chainId={contractChainId} contractAddress={contractAddress} />
+            {canAddSchedule && isConnectedWithCorrectChain &&
+              <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
+            {canAddSchedule && !isConnectedWithCorrectChain &&
+              <SwitchChainButton chainId={contractChainId} />}
+          </div>
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
