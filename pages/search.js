@@ -7,7 +7,7 @@ import Link from "next/link"
 import { PlusIcon, QueueListIcon } from "@heroicons/react/24/outline";
 
 import { formatCurrency, formatAmount } from "@/lib/utils"
-import { getVestingContractDetails } from "@/lib/vesting"
+import { findVestingContractChainId, getVestingContractDetails } from "@/lib/vesting"
 import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
 import { usePortfolioItems } from "@/lib/portfolio"
 import { useHasHydrated } from "@/lib/hooks"
@@ -47,16 +47,17 @@ export const NoPortfolioItems = () => {
   const [showIndexing, setShowIndexing] = useState(false)
 
   const handleAddContract = async (data) => {
-    const details = await getVestingContractDetails(1, data.vestingContract)
-    const isIndexed = !!details?.meta.contractType
+    const chainId = await findVestingContractChainId(data.vestingContract)
+    const isIndexed = !!chainId
+
     if (isIndexed) {
+      const details = await getVestingContractDetails(chainId, data.vestingContract)
       push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
       return
     }
 
     await axios.post("https://formspree.io/f/xaykqkok", data);
     setShowIndexing(true)
-
     reset();
   };
 
