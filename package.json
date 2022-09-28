@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.6.9",
     "@gnosis.pm/safe-apps-provider": "^0.13.1",
     "@gnosis.pm/safe-apps-sdk": "^7.8.0",
     "@gnosis.pm/safe-apps-wagmi": "^1.0.3",
@@ -18,6 +19,7 @@
     "axios": "^0.27.2",
     "eslint-plugin-tailwindcss": "^3.6.2",
     "ethers": "^5.7.0",
+    "graphql": "^16.6.0",
     "immer": "^9.0.15",
     "moment": "^2.29.4",
     "next": "12.2.5",
