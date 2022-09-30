@@ -4,8 +4,8 @@ import { BigNumber } from "ethers"
 import toast from "react-hot-toast"
 import Moment from "react-moment"
 
-import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
-import { classNames } from "@/lib/utils"
+import { useTokenDetails, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
+import { classNames, formatCurrency } from "@/lib/utils"
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import SwitchChainButton from "./SwitchChainButton"
@@ -26,7 +26,15 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
   const { chain } = useNetwork()
   const { id, tokenAddress, endTime, startTime } = grant
   const formatToken = useTokenFormatter(chainId, tokenAddress)
+  const tokenPrice = useTokenPrice(chainId, tokenAddress)
   const { decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
+
+  const getUSDValue = (amount) => {
+    if (!tokenPrice) return
+
+    const formattedAmount = +(formatToken(amount, { symbol: null, commify: false }))
+    return formatCurrency(tokenPrice * formattedAmount, 'USD', { shorten: true })
+  }
 
   const isDust = (amount, decimals, digits) =>
     amount.lt(BigNumber.from(10).pow(decimals - digits))
@@ -107,6 +115,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
           <div className="flex flex-col">
             <ItemTitle>Claimable</ItemTitle>
             <span className="text-lg">{releasableAmount && formatToken(releasableAmount)}</span>
+            <span className="text-sm text-gray-500">{getUSDValue(releasableAmount)}</span>
           </div>
           <div>
             {canClaim && isConnectedWithCorrectChain && (
@@ -131,9 +140,10 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
             {grantStatus === "vested" && "Fully Vested"}
           </span>
         </div>
-        <div>
+        <div className="flex flex-col">
           <ItemTitle>Allocation</ItemTitle>
           <span className="text-lg">{grant?.amount && formatToken(grant.amount, { shorten: true })}</span>
+          <span className="text-sm text-gray-500">{grant?.amount && getUSDValue(grant.amount)}</span>
         </div>
         <div className="w-48">
           <div className="flex justify-between items-center">
