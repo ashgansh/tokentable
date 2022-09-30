@@ -276,21 +276,18 @@ const ConnectCTA = ({ hasGrants }) => {
     </div>
   )
 }
-
-const Vesting = () => {
+export const Vesting = ({chainId: contractChainIdUnformatted, contractAddress: contractAddressUnformatted, filters}) => {
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
   const [vestingMetaData, setVestingMetaData] = useState({})
   const [isLoading, setIsLoading] = useState(true)
   const { chain } = useNetwork()
   const { address: account } = useAccount()
-  const { query } = useRouter()
 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
-  const { contractAddress: contractAddressUnformatted, chainId: contractChainIdString } = query
-  const contractChainId = Number(contractChainIdString)
+  const contractChainId = Number(contractChainIdUnformatted)
   const contractAddress = formatAddress(contractAddressUnformatted)
   const currentChainId = chain?.id
   const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
@@ -304,13 +301,13 @@ const Vesting = () => {
       const { meta, getVestingData } = await getVestingContractDetails(contractChainId, contractAddress)
       setVestingMetaData(meta)
       setIsLoading(true)
-      const vestingData = await getVestingData()
+      const vestingData = await getVestingData(filters)
       setVestingData(vestingData)
       setIsLoading(false)
     }
 
     retrieveVestingData()
-  }, [contractAddress, contractChainId])
+  }, [contractAddress, contractChainId, filters])
 
   useEffect(() => {
     retrieveVestingData()
@@ -355,4 +352,11 @@ const Vesting = () => {
   )
 }
 
-export default Vesting
+const VestingPage = () => {
+  const { query } = useRouter()
+  const { contractAddress, chainId } = query
+
+  return <Vesting contractAddress={contractAddress} chainId={chainId} filters={{}} />
+}
+
+export default VestingPage

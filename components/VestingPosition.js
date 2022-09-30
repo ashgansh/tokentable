@@ -13,7 +13,7 @@ import SwitchChainButton from "./SwitchChainButton"
 const getGrantStatus = (grant) => {
   const now = Date.now() / 1000
 
-  if (grant.revoked) return "revoked"
+  if (grant.isRevoked) return "revoked"
   if (grant.endTime > now) return "vesting"
 
   return "vested"

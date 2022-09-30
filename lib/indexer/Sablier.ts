@@ -1,6 +1,7 @@
 import { BigNumber, Contract } from "ethers";
 import { SABLIER_MERIT_CONTRACT_ABI } from "@/lib/contracts/SablierMerit";
 import { getProvider } from "@/lib/provider";
+import { ConstructorFragment } from "ethers/lib/utils";
 
 const getVestedAmount = (startTime, endTime, amount) => {
   const now = Math.round(Date.now() / 1000);
@@ -8,12 +9,14 @@ const getVestedAmount = (startTime, endTime, amount) => {
   return amount.mul(stopTime - startTime).div(endTime - startTime);
 };
 
-const getGrantsAndWithdrawalsAndAdmins = async (contract) => {
-  const createStreamEvents = await contract.queryFilter("CreateStream");
-  const cancelStreamEvents = await contract.queryFilter("CancelStream");
-  const withdrawFromStreamEvents = await contract.queryFilter(
-    "WithdrawFromStream"
-  );
+const getGrantsAndWithdrawalsAndAdmins = async (contract, filters) => {
+  const { admin } = filters || {};
+
+  const createStreamFilter = contract.filters.CreateStream(null, admin || null);
+  const cancelStreamFilter = contract.filters.CancelStream(null, admin || null);
+
+  const createStreamEvents = await contract.queryFilter(createStreamFilter);
+  const cancelStreamEvents = await contract.queryFilter(cancelStreamFilter);
 
   const grants = await Promise.all(
     createStreamEvents.map(async (event) => {
@@ -22,16 +25,17 @@ const getGrantsAndWithdrawalsAndAdmins = async (contract) => {
         recipient,
         deposit,
         tokenAddress,
+        sender,
         startTime: startTimeBN,
         stopTime: stopTimeBN,
       } = event.args;
 
-      const streamId = streamIdBN.toNumber()
+      const streamId = streamIdBN.toNumber();
       const startTime = startTimeBN.toNumber();
       const endTime = stopTimeBN.toNumber();
 
       const cancelationEvent = cancelStreamEvents
-        .filter((event) => event.args.id === streamId)
+        .filter((event) => event.args.streamId.eq(streamId))
         .shift();
 
       const revokedBlock = cancelationEvent?.blockNumber || null;
@@ -46,6 +50,7 @@ const getGrantsAndWithdrawalsAndAdmins = async (contract) => {
       return {
         id: streamId,
         beneficiary: recipient,
+        admin: sender,
         tokenAddress,
         amount: deposit,
         vestedAmount: vestedAmount,
@@ -60,11 +65,16 @@ const getGrantsAndWithdrawalsAndAdmins = async (contract) => {
     })
   );
 
+  const streamIds = grants.map((grant) => grant.id);
+  const withdrawFromStreamFilter =
+    contract.filters.WithdrawFromStream(streamIds);
+  const withdrawFromStreamEvents = await contract.queryFilter(
+    withdrawFromStreamFilter
+  );
+
   const withdrawals = withdrawFromStreamEvents.map((event) => {
     const { recipient, amount, streamId } = event.args;
-    const grant = grants.find(
-      (grant) => grant.id === streamId.toNumber()
-    );
+    const grant = grants.find((grant) => grant.id === streamId.toNumber());
     const tokenAddress = grant?.tokenAddress;
     return {
       blockNumber: event.blockNumber,
@@ -126,7 +136,7 @@ const getTotalVestedAmounts = (grants) => {
 };
 
 const releaseAndWithdrawCallback = (contract, grants) => async (signer, id) => {
-  const grant = grants.find(grant => grant.id === id)
+  const grant = grants.find((grant) => grant.id === id);
   const vestingContract = new Contract(
     contract.address,
     contract.interface,
@@ -137,13 +147,18 @@ const releaseAndWithdrawCallback = (contract, grants) => async (signer, id) => {
 };
 
 const getReleasableAmountCallback = (contract, grants) => async (id) => {
-  const grant = grants.find(grant => grant.id === id)
-  return await contract.balanceOf(id, grant.beneficiary);
+  try {
+    const grant = grants.find((grant) => grant.id === id);
+    return await contract.balanceOf(id, grant.beneficiary);
+  } catch (_) {
+    return BigNumber.from(0);
+  }
 };
 
 export const getVestingData = async (
   chainId: number,
-  contractAddress: string
+  contractAddress: string,
+  filters
 ) => {
   const provider = getProvider(chainId);
   const contract = new Contract(
@@ -153,7 +168,8 @@ export const getVestingData = async (
   );
 
   const [grants, withdrawals, admins] = await getGrantsAndWithdrawalsAndAdmins(
-    contract
+    contract,
+    filters
   );
   const tokens = await getTokens(grants);
 
@@ -179,8 +195,8 @@ export const getVestingData = async (
     totalAllocatedAmounts,
     totalVestedAmounts,
     tokens,
-    capabilities,
     admins,
+    capabilities,
     getReleasableAmount,
     releaseAndWithdraw,
   };
