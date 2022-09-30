@@ -1,33 +1,15 @@
 import { useRouter } from "next/router"
 import { useCallback, useEffect, useState } from "react"
-import { useAccount, useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
-import { isAddress, parseUnits } from "ethers/lib/utils"
-import { useForm } from "react-hook-form"
-import { BookmarkIcon as BookmarkIconOutline, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
-import { BookmarkIcon as BookmarkIconSolid } from "@heroicons/react/24/solid"
-import toast from "react-hot-toast"
 
-import { getVestingContractDetails, getVestingData } from "@/lib/vesting"
-import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
-import { portfolioStore } from "@/lib/portfolio"
+import { getVestingData } from "@/lib/vesting"
 import { formatAddress, classNames } from "@/lib/utils"
 
-import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
-import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
-import { PrimaryButton, SecondaryButton } from "@/components/Button"
-import Spinner from "@/components/Spinner"
-import VestingPosition from "@/components/VestingPosition"
-import SwitchChainButton from "@/components/SwitchChainButton"
 import VestingInsights from "@/components/VestingInsights"
-import VestingTable from "@/components/VestingTable"
-import { useConnectModal } from "@rainbow-me/rainbowkit"
+import StreamsTable from "@/components/StreamsTable"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
-  const { address: account } = useAccount()
-  const myGrants = vestingData?.grants?.filter(grant => grant.beneficiary === account) || []
-
   return (
     <div className="flex flex-col gap-4 py-4">
       <div>
@@ -46,17 +28,16 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
       </div>
       <div>
         <h2 className="text-lg py-2">Stakeholders</h2>
-        <VestingTable grants={vestingData?.grants || []} chainId={vestingData?.chainId} isLoading={isLoading} />
+        <StreamsTable streams={vestingData?.grants || []} chainId={vestingData?.chainId} isLoading={isLoading} />
       </div>
     </div>
   )
 }
 
-const Vesting = () => {
+const Superfluid = () => {
   const [vestingData, setVestingData] = useState(null)
   const [vestingMetaData, setVestingMetaData] = useState({})
   const [isLoading, setIsLoading] = useState(true)
-  const { address: account } = useAccount()
   const { query } = useRouter()
 
   const { senderAccount: senderAccountUnformatted, chainId: contractChainIdString } = query
@@ -103,4 +84,4 @@ const Vesting = () => {
   )
 }
 
-export default Vesting
+export default Superfluid

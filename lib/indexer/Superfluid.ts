@@ -43,7 +43,6 @@ const getGrants = async (senderAccount, client) => {
     const now = Date.now() / 1000;
     const nowOrEndTime = Math.min(now, endTime);
     const timeElapsed = startTime - nowOrEndTime;
-    const amount = BigNumber.from("100000000000000000000000");
     const vestedAmount = totalAmountStreamed
       ? BigNumber.from(totalAmountStreamed)
       : BigNumber.from(flowRate).mul(timeElapsed);
@@ -54,7 +53,6 @@ const getGrants = async (senderAccount, client) => {
       startTime,
       endTime,
       cliffTime,
-      amount,
       vestedAmount,
     };
   });
