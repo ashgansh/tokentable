@@ -6,10 +6,31 @@ import { useTokenFormatter } from "@/lib/tokens"
 import { shortAddress } from "@/lib/utils"
 import { getAddressBlockExplorerLink } from "@/lib/provider"
 
+const ProgressBar = ({ percentage, thresholdPercentage, canceled }) => {
+  return (
+    <div className="relative w-full bg-gray-200 rounded-full h-2.5">
+      {canceled && (
+        <div className="absolute bg-red-400 h-2.5 rounded-full w-full"></div>
+      )}
+      <div className="absolute bg-blue-600 h-2.5 rounded-full" style={{ width: percentage }}></div>
+      <div className="absolute bg-blue-300 h-2.5 rounded-l-full opacity-50" style={{ width: thresholdPercentage }}></div>
+    </div>
+  )
+}
+
 const GrantRow = ({ grant, chainId }) => {
   const formatToken = useTokenFormatter(chainId, grant.tokenAddress)
-  const vestedPercentage = grant.vestedAmount.mul(10000).div(grant.amount).toNumber() / 100
+
+  const now = Date.now() / 1000
+  const nowOrEndTime = Math.min(now, grant.endTime, grant.revokedTime)
+  const progressPercentage = Math.round(((nowOrEndTime - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
+  const progressPercentageFormatted = `${progressPercentage}%`
+
+  const vestedPercentage = Math.round(grant.vestedAmount.mul(10000).div(grant.amount).toNumber() / 100)
   const vestedPercentageFormatted = `${vestedPercentage}%`
+
+  const cliffPercentage = Math.round(((grant.cliffTime - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
+  const cliffPercentageFormatted = `${cliffPercentage}%`
 
   const vestedStatus = () => {
     if (grant.isRevoked && grant.revokedTime < Date.now() / 1000) return "Revoked"
@@ -38,19 +59,25 @@ const GrantRow = ({ grant, chainId }) => {
         {vestedStatus()}
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(grant.amount)}
+        {formatToken(grant.amount, {shorten: true})} ({vestedPercentageFormatted})
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(grant.vestedAmount)} ({vestedPercentageFormatted})
+        {formatToken(grant.vestedAmount, {shorten: true})}
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={grant.startTime} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={grant.cliffTime} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={grant.endTime} />
+        <ProgressBar
+          percentage={progressPercentageFormatted}
+          thresholdPercentage={cliffPercentageFormatted}
+          canceled={grant.isRevoked}
+        />
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-500 py-1.5">
+            <Moment unix format="MMM YYYY">{grant.startTime}</Moment>
+          </span>
+          <span className="text-sm text-gray-500 py-1.5">
+            <Moment unix format="MMM YYYY">{grant.endTime}</Moment>
+          </span>
+        </div>
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         {grant.revokedTime && (
@@ -111,13 +138,7 @@ const VestingTable = ({ grants, chainId, isLoading }) => {
                   Vested Amount
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Start
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Cliff
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  End
+                  Progress
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Revoked
