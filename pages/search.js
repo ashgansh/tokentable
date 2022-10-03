@@ -20,10 +20,7 @@ import Spinner from "@/components/Spinner";
 import { chainId, useAccount } from "wagmi";
 import { useRouter } from "next/router";
 
-const BENEFICIARY_ADDRESSES = [
-  "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
-  "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
-]
+
 
 
 export const NoPortfolioItems = () => {
