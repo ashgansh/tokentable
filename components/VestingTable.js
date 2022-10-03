@@ -2,27 +2,17 @@ import Moment from "react-moment"
 
 import { ClipboardIcon, LinkIcon } from "@heroicons/react/24/outline"
 
+import ProgressBar from "@/components/ProgressBar"
+
 import { useTokenFormatter } from "@/lib/tokens"
 import { shortAddress } from "@/lib/utils"
 import { getAddressBlockExplorerLink } from "@/lib/provider"
-
-const ProgressBar = ({ percentage, thresholdPercentage, canceled }) => {
-  return (
-    <div className="relative w-full bg-gray-200 rounded-full h-2.5">
-      {canceled && (
-        <div className="absolute bg-red-400 h-2.5 rounded-full w-full"></div>
-      )}
-      <div className="absolute bg-blue-600 h-2.5 rounded-full" style={{ width: percentage }}></div>
-      <div className="absolute bg-blue-300 h-2.5 rounded-l-full opacity-50" style={{ width: thresholdPercentage }}></div>
-    </div>
-  )
-}
 
 const GrantRow = ({ grant, chainId }) => {
   const formatToken = useTokenFormatter(chainId, grant.tokenAddress)
 
   const now = Date.now() / 1000
-  const nowOrEndTime = Math.min(now, grant.endTime, grant.revokedTime)
+  const nowOrEndTime = Math.min(now, grant.revokedTime || grant.endTime)
   const progressPercentage = Math.round(((nowOrEndTime - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
   const progressPercentageFormatted = `${progressPercentage}%`
 
@@ -68,7 +58,7 @@ const GrantRow = ({ grant, chainId }) => {
         <ProgressBar
           percentage={progressPercentageFormatted}
           thresholdPercentage={cliffPercentageFormatted}
-          canceled={grant.isRevoked}
+          cancelled={grant.isRevoked}
         />
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500 py-1.5">
