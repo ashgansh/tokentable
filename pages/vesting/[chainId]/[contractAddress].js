@@ -104,8 +104,10 @@ const ConnectCTA = ({ hasGrants }) => {
 
   const handleClose = () => setIsClosed(true)
 
+  if (!showCTA) return <></>
+
   return (
-    <div className={classNames("rounded-lg bg-tokenops-primary-600 p-2 shadow sm:p-3", !showCTA && "hidden")}>
+    <div className="rounded-lg bg-tokenops-primary-600 p-2 shadow sm:p-3">
       <div className="flex flex-wrap items-center justify-between">
         <div className="flex w-0 flex-1 items-center">
           <p className="ml-3 truncate font-medium text-white">
