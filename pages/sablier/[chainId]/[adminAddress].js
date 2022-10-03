@@ -8,7 +8,7 @@ const VestingPage = () => {
 
   const contractAddress = SABLIER_CONTRACT_ADDRESSES[chainId]
 
-  return <Vesting contractAddress={contractAddress} chainId={chainId} filters={{admin: adminAddress}} />
+  return <Vesting contractAddress={contractAddress} chainId={chainId} filters={{ admin: adminAddress }} />
 }
 
 export default VestingPage

@@ -1,7 +1,7 @@
 import { BigNumber, Contract } from "ethers";
 import { SABLIER_MERIT_CONTRACT_ABI } from "@/lib/contracts/SablierMerit";
 import { getProvider } from "@/lib/provider";
-import { ConstructorFragment } from "ethers/lib/utils";
+import { getTokenBalance } from "@/lib/tokens";
 
 const getVestedAmount = (startTime, endTime, amount) => {
   const now = Math.round(Date.now() / 1000);
@@ -135,6 +135,26 @@ const getTotalVestedAmounts = (grants) => {
   }, {});
 };
 
+const addVestingScheduleCallback = (contract) => async (signer, schedule) => {
+  const { startTime, endTime, amount, beneficiary, tokenAddress } = schedule
+
+  const cliff = 0
+  const duration = endTime - startTime
+  const slicePeriodSeconds = 1
+  const revocable = true
+
+  const vestingContract = new Contract(contract.address, contract.interface, signer)
+  return await vestingContract.createVestingSchedule(
+    beneficiary,
+    startTime,
+    cliff,
+    duration,
+    slicePeriodSeconds,
+    revocable,
+    amount
+  )
+}
+
 const releaseAndWithdrawCallback = (contract, grants) => async (signer, id) => {
   const grant = grants.find((grant) => grant.id === id);
   const vestingContract = new Contract(
@@ -154,6 +174,10 @@ const getReleasableAmountCallback = (contract, grants) => async (id) => {
     return BigNumber.from(0);
   }
 };
+
+const getAdminTokenAllowanceCallback = (chainId) => async (tokenAddress, account) => {
+  return await getTokenBalance(chainId, tokenAddress, account)
+}
 
 export const getVestingData = async (
   chainId: number,
@@ -181,11 +205,13 @@ export const getVestingData = async (
   // Callbacks
   const releaseAndWithdraw = releaseAndWithdrawCallback(contract, grants);
   const getReleasableAmount = getReleasableAmountCallback(contract, grants);
+  const addVestingSchedule = addVestingScheduleCallback(contract);
+  const getAdminTokenAllowance = getAdminTokenAllowanceCallback(chainId);
 
   // Capabilities
   const capabilities = {
-    multiToken: false,
-    addVestingSchedule: false,
+    multiToken: true,
+    addVestingSchedule: true,
   };
 
   return {
@@ -199,5 +225,7 @@ export const getVestingData = async (
     capabilities,
     getReleasableAmount,
     releaseAndWithdraw,
+    addVestingSchedule,
+    getAdminTokenAllowance
   };
 };
