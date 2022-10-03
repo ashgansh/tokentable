@@ -9,6 +9,12 @@ export default function Document() {
           data-domain="vesting.lol"
           src="https://plausible.io/js/plausible.js"
         ></script>
+        <script
+          defer
+          data-domain="tokentable.org"
+          src="https://plausible.io/js/plausible.js"
+        ></script>
+
         <link
           rel="icon"
           type="image/png"
