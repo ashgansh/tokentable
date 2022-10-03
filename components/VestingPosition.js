@@ -31,6 +31,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
 
   const getUSDValue = (amount) => {
     if (!tokenPrice) return
+    if (!amount) return
 
     const formattedAmount = +(formatToken(amount, { symbol: null, commify: false }))
     return formatCurrency(tokenPrice * formattedAmount, 'USD', { shorten: true })
