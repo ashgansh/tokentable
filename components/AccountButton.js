@@ -28,7 +28,7 @@ const AccountButton = () => {
         return (() => {
           if (!connected) {
             return (
-              <button className="w-full text-center text-sm text-gray-500 p-4" onClick={openConnectModal} type="button">
+              <button className="w-full text-center text-sm text-gray-100 p-4 ml-8 inline-flex justify-center whitespace-nowrap rounded-md border border-transparent bg-tokenops-primary-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-tokenops-primary-700" onClick={openConnectModal} type="button">
                 Connect
               </button>
             );

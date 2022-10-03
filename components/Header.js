@@ -4,6 +4,7 @@ import { Popover, Transition } from "@headlessui/react";
 import TokenOpsLogo from "../images/tokenops-logo.svg";
 import AccountButton from "./AccountButton";
 import Link from "next/link";
+import { SecondaryButton } from "./Button";
 
 export default function Header() {
   return (
@@ -34,12 +35,9 @@ export default function Header() {
             </a>
           </Link>
           <div>
-            <a
-              href="https://tokenops.xyz/register"
-              className="ml-8 inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent bg-tokenops-primary-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-tokenops-primary-700"
-            >
-              Get in touch
-            </a>
+            {/* <SecondaryButton>
+              <a href="https://tokenops.xyz/register">Get in touch</a>
+            </SecondaryButton> */}
           </div>
           <div className="flex flex-shrink-0 ml-4">
             <AccountButton />
