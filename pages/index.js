@@ -1,73 +1,166 @@
-import Header from '@/components/Header'
-import Link from 'next/link'
+import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form";
+import { isAddress } from "ethers/lib/utils";
+import axios from "axios";
+import Link from "next/link"
 
-const RocketLaunchIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6" {...props}>
-  <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-</svg>
+import { PlusIcon, QueueListIcon } from "@heroicons/react/24/outline";
 
-const QueueList = (props) => <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6" {...props}>
-  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-</svg>
+import { formatCurrency, formatAmount } from "@/lib/utils"
+import { findVestingContractChainId, getVestingContractDetails } from "@/lib/vesting"
+import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
+import { usePortfolioItems } from "@/lib/portfolio"
+import { useHasHydrated } from "@/lib/hooks"
+
+import PortfolioContract from "@/components/PortfolioContract"
+import PortfolioPosition from "@/components/PortfolioPosition";
+import { LayoutWrapper } from "@/components/LayoutWrapper";
+import { Input } from "@/components/Input";
+import Spinner from "@/components/Spinner";
+import { chainId, useAccount } from "wagmi";
+import { useRouter } from "next/router";
 
 
-const NavList = [
-  {
-    name: 'I want to start tracking my vesting schedules',
-    role: 'For employees/investors',
-    icon: QueueList,
-    link: '/search'
 
-  },
-  {
-    name: 'I want to create a new vesting schedule',
-    role: 'For startup operators',
-    link: '/contracts/create',
-    icon: RocketLaunchIcon,
+
+export const NoPortfolioItems = () => {
+  const exampleContracts = [
+    {
+      address: '0x2a7d59e327759acd5d11a8fb652bf4072d28ac04',
+    },
+    ,
+  ]
+
+  const {
+    reset,
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitSuccessful, isSubmitting },
+  } = useForm();
+  const { push } = useRouter()
+  const [showIndexing, setShowIndexing] = useState(false)
+
+  const handleAddContract = async (data) => {
+    const chainId = await findVestingContractChainId(data.vestingContract)
+    const isIndexed = !!chainId
+
+    if (isIndexed) {
+      const details = await getVestingContractDetails(chainId, data.vestingContract)
+      push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
+      return
+    }
+
+    await axios.post("https://formspree.io/f/xaykqkok", data);
+    setShowIndexing(true)
+    reset();
+  };
+
+  const handleTryContract = (contractAddress) => {
+    setValue("vestingContract", contractAddress)
   }
-  // More people...
-]
 
-export default function Example() {
   return (
-    <div className='max-w-5xl m-auto'>
-      <Header />
-      <div className="bg-white m-auto">
-        <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:px-8 lg:py-24">
-          <div className="space-y-12">
-            <div className="space-y-5 sm:space-y-4 md:max-w-xl lg:max-w-3xl xl:max-w-none">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Welcome</h2>
-              <p className="text-xl text-gray-500">
-                What do you want to do?
-              </p>
-            </div>
-            <ul
-              role="list"
-              className="space-y-12 flex justify-between sm:gap-x-6 sm:gap-y-12 sm:space-y-0 lg:gap-x-8 "
+    <div className="mx-auto max-w-lg">
+      <div className="text-center mb-2">
+        <QueueListIcon className="h-12 w-12 text-gray-300 mx-auto" />
+        <h2 className="mt-2 text-lg font-medium text-gray-900">
+          Track Vesting Schedules
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">
+          {`Start tracking your first vesting contract`}
+        </p>
+        <div>
+          <form
+            onSubmit={handleSubmit(handleAddContract)}
+            className="mt-6 flex"
+          >
+            <Input
+              placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
+              className="min-w-[350px]"
+              {...register("vestingContract", {
+                required: true,
+                validate: { isAddress },
+              })}
+            />
+            <span className="text-xs text-red-400">
+              {errors?.beneficiaryAddress && "A valid vesting address is required"}
+            </span>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-3 ml-4 flex-shrink-0 rounded-md border border-transparent bg-tokenops-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-tokenops-primary700 focus:outline-none focus:ring-2 focus:ring-tokenops-primary500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {NavList.map((navItem) => (
-                <Link href={navItem.link} key={navItem.name}>
-                  <li className="cursor-pointer rounded-md border  bg-white px-4 py-5 sm:px-6 bg-white shadow sm:rounded-lg">
-                    <div className="space-y-4">
-                      <div className="aspect-w-3 aspect-h-2 flex justify-center">
-                        <navItem.icon className="w-16 h-16 stroke-gray-300 stroke-1" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="space-y-1 text-lg font-medium leading-6 ">
-                          <h3>{navItem.role}</h3>
-                          <p className="text-tokenops-primary-600 text-xs">{navItem.name}</p>
-                        </div>
-                      </div>
+              {isSubmitting && <Spinner className="text-white h-4" />}
+              Track your vesting
+            </button>
+          </form>
+          <div className="mt-10">
+            <h3 className="text-sm font-medium text-gray-500 text-left">Try one of these examples. Just copy it in the search box.</h3>
+            <ul role="list" className="mt-4 divide-y divide-gray-200 border-t border-b border-gray-200 text-left">
+              {exampleContracts.map(contract => (
+                <li key={contract.address} className="flex items-center justify-between space-x-3 py-2">
+                  <div className="flex min-w-0 flex-1 items-center space-x-3">
+                    <div className="min-w-0 flex-1 min-h-[2rem] flex items-center">
+                      <p className="truncate text-sm text-gray-500">{contract.address}</p>
                     </div>
-                  </li>
-                </Link>
+                    <div className="flex-shrink-0">
+                      {/* <button
+                        type="button"
+                        className="inline-flex items-center rounded-full border border-transparent bg-gray-100 py-2 px-3 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        onClick={() => handleTryContract(contract.address)}
+                      >
+                        <span className="text-sm font-medium text-gray-900">Copy</span>
+                      </button> */}
+                    </div>
+                  </div>
+                </li>
               ))}
             </ul>
           </div>
-          {/* <div className="space-y-5 sm:space-y-4 md:max-w-xl lg:max-w-3xl xl:max-w-none mt-3">
-            <h2 className="text-xl font-bold tracking-tight sm:text-4xl">My Vestings</h2>
-         </div> */}
         </div>
+        {showIndexing && (
+          <>
+            <div className="py-12 items-center flex flex-col gap-4">
+              <span>
+                {"We're indexing your contract. This may take up to a 24h."}
+              </span>
+              <span>{"Please check back again later."}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
+  );
+};
+
+;
+
+const Portfolio = () => {
+  const hasHydrated = useHasHydrated()
+  const portfolioItemObject = usePortfolioItems()
+  Object.values(portfolioItemObject)
+  const { address: account } = useAccount()
+
+  if (!hasHydrated) return <></>
+
+
+  return (
+    <>
+      <NoPortfolioItems />
+    </>
   )
 }
+
+const Home = () => {
+  return (
+    <LayoutWrapper>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+        <Portfolio />
+      </div>
+    </LayoutWrapper>
+  );
+};
+
+export default Home;
