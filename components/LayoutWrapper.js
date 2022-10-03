@@ -13,7 +13,7 @@ export const LayoutWrapper = ({ children }) => {
   return (
     <>
       <Head>
-        <title>TokenOps</title>
+        {/* <title>TokenOps</title> */}
       </Head>
       <div className='max-w-6xl m-auto'>
         <Header />
