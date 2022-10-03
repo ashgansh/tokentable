@@ -31,9 +31,7 @@ export const NoPortfolioItems = () => {
     {
       address: '0x2a7d59e327759acd5d11a8fb652bf4072d28ac04',
     },
-    {
-      address: '0x38569f73190d6d2f3927c0551526451e3af4d8d6',
-    },
+    ,
   ]
 
   const {
