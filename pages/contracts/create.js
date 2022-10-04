@@ -724,26 +724,36 @@ const Contracts = () => {
         <div>
           <div className="flex gap-8">
             <CreateVestingContractProgressBar currentStep={step} />
-            <div className="flex-grow">
-              <Card>
-                {step === 0 && (
-                  <CreateVestingContractStep goToNextStep={goToStep1} />
+            <div className="flex-grow flex gap-6 flex-col">
+              <Card
+                className={classNames(
+                  step === 0 ? "opacity-100" : "opacity-50 pointer-events-none"
                 )}
+              >
+                <CreateVestingContractStep goToNextStep={goToStep1} />
               </Card>
-              {step === 1 && (
+              <Card
+                className={classNames(
+                  step === 1 ? "opacity-100" : "opacity-50 pointer-events-none"
+                )}
+              >
                 <FundVestingContractStep
                   vestingContractAddress={vestingContractAddress}
                   tokenAddress={tokenAddress}
                   goToNextStep={goToStep2}
                 />
-              )}
-              {step === 2 && (
+              </Card>
+              <Card
+                className={classNames(
+                  step === 2 ? "opacity-100" : "opacity-50 pointer-events-none"
+                )}
+              >
                 <AddFirstStakeholderStep
                   vestingContractAddress={vestingContractAddress}
                   tokenAddress={tokenAddress}
                   goToNextStep={goToVestingPage}
                 />
-              )}
+              </Card>
             </div>
           </div>
         </div>
