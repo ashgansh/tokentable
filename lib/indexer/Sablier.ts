@@ -6,7 +6,9 @@ import { getTokenBalance } from "@/lib/tokens";
 const getVestedAmount = (startTime, endTime, amount) => {
   const now = Math.round(Date.now() / 1000);
   const stopTime = Math.min(now, endTime);
-  return amount.mul(stopTime - startTime).div(endTime - startTime);
+  const elapsed = Math.max(0, stopTime - startTime)
+  const duration = endTime - startTime
+  return amount.mul(elapsed).div(duration);
 };
 
 const getGrantsAndWithdrawalsAndAdmins = async (contract, filters) => {

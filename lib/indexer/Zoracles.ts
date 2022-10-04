@@ -108,7 +108,9 @@ const getVestedAmount = (
   const isRevoked = !!revokedTime;
   const endOrRevokedTime = isRevoked ? revokedTime : endTime;
   const stopTime = Math.min(now, endOrRevokedTime);
-  return amount.mul(stopTime - startTime).div(endTime - startTime);
+  const elapsed = Math.max(0, stopTime - startTime)
+  const duration = endTime - startTime
+  return amount.mul(elapsed).div(duration);
 };
 
 const getTotalVestedAmounts = (grants) => {

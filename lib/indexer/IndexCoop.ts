@@ -13,7 +13,9 @@ const getVestedAmount = (startTime, endTime, cliffTime, amount) => {
   if (now < cliffTime) return BigNumber.from(0);
 
   const stopTime = Math.min(now, endTime);
-  return amount.mul(stopTime - startTime).div(endTime - startTime);
+  const elapsed = Math.max(0, stopTime - startTime)
+  const duration = endTime - startTime
+  return amount.mul(elapsed).div(duration);
 };
 
 const getGrants = async (contract, tokenAddress) => {
