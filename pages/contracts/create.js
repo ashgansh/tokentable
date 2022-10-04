@@ -727,14 +727,16 @@ const Contracts = () => {
             <div className="flex-grow flex gap-6 flex-col">
               <Card
                 className={classNames(
-                  step === 0 ? "opacity-100" : "opacity-50 pointer-events-none", 'transition-opacity'
+                  step === 0 ? "opacity-100" : "opacity-50 pointer-events-none",
+                  "transition-opacity transition ease-in-out"
                 )}
               >
                 <CreateVestingContractStep goToNextStep={goToStep1} />
               </Card>
               <Card
                 className={classNames(
-                  step === 1 ? "opacity-100" : "opacity-50 pointer-events-none", 'transition-opacity'
+                  step === 1 ? "opacity-100" : "opacity-50 pointer-events-none",
+                  "transition-opacity transition ease-in-out"
                 )}
               >
                 <FundVestingContractStep
@@ -745,7 +747,8 @@ const Contracts = () => {
               </Card>
               <Card
                 className={classNames(
-                  step === 2 ? "opacity-100" : "opacity-50 pointer-events-none", 'transition-opacity'
+                  step === 2 ? "opacity-100" : "opacity-50 pointer-events-none",
+                  "transition-opacity transition ease-in-out"
                 )}
               >
                 <AddFirstStakeholderStep
