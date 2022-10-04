@@ -3,7 +3,7 @@ import Spinner from "@/components/Spinner"
 import SwitchChainButton from "@/components/SwitchChainButton"
 import Moment from "react-moment"
 
-const Card = ({ children }) => (
+export const Card = ({ children }) => (
   <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
     {children}
   </div>
