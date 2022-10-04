@@ -166,18 +166,13 @@ const getTotalVestedAmounts = (grants) => {
   }, {});
 };
 
-const addVestingScheduleCallback = (contract) => async (signer, schedule) => {
+const addVestingScheduleCallback = (vestingContract) => async (signer, schedule) => {
   const { startTime, endTime, amount, beneficiary, tokenAddress } = schedule;
 
   const grantPeriod = endTime - startTime;
   const cliffPeriod = 0;
 
-  const vestingContract = new Contract(
-    contract.address,
-    contract.interface,
-    signer
-  );
-  return await vestingContract.createVesting(
+  const tx = await vestingContract.populateTransactions.createVesting(
     tokenAddress,
     beneficiary,
     amount,
@@ -185,6 +180,7 @@ const addVestingScheduleCallback = (contract) => async (signer, schedule) => {
     grantPeriod,
     cliffPeriod
   );
+  return [tx]
 };
 
 const getReleasableAmountCallback = (contract, grants) => async (id) => {

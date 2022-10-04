@@ -13,6 +13,7 @@ import { Modal, ModalActionFooter, ModalBody, ModalTitle } from '@/components/Mo
 import { CurrencyInput, Input, Label } from '@/components/Input'
 import { PrimaryButton } from '@/components/Button'
 import Spinner from '@/components/Spinner'
+import toast from 'react-hot-toast'
 
 const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) => {
   const [query, setQuery] = useState('')
@@ -96,14 +97,14 @@ const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) =
 const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, addVestingSchedule, getAdminTokenAllowance, isMultiToken }) => {
   const { handleSubmit, register, reset, getValues, watch, control, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
-      token: tokenAddresses?.[0]
+      tokenAddress: tokenAddresses?.[0]
     }
   })
   const { address: account } = useAccount()
   const [tokenAllowance, setTokenAllowance] = useState(null)
   const { data: signer } = useSigner()
 
-  const tokenAddress = watch("token")
+  const tokenAddress = watch("tokenAddress")
   const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
   const formatToken = useTokenFormatter(chainId, tokenAddress)
 
@@ -130,11 +131,48 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
     }
   }
 
+  const startIsInFuture = (start) => {
+    const now = Date.now()
+    const startTime = new Date(start).getTime()
+    return now < startTime
+  }
+
   const endIsAfterStart = (end) => {
     const start = getValues("start")
     const startTime = Math.round(new Date(start).getTime() / 1000)
     const endTime = Math.round(new Date(end).getTime() / 1000)
     return endTime > startTime
+  }
+
+  const executeTransactions = async (signer, transactions) => {
+    const receipts = []
+
+    for (let i = 0; i < transactions.length; i++) {
+      const tx = transactions[i]
+      const toastId = toast.loading("Sign transaction")
+      try {
+        const txResponse = await signer.sendTransaction(tx)
+        toast.loading("Waiting for transaction...", { id: toastId })
+        const txReceipt = await txResponse.wait()
+        receipts.push(txReceipt)
+        toast.success("Success", { id: toastId })
+      } catch (e) {
+        console.error(e)
+
+        // User didn't sign transaction
+        if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+          toast.dismiss(toastId)
+          break
+        }
+
+        // Display error message
+        const message = e?.data?.message || e?.error?.message || e.message;
+        toast.error("Something went wrong...", { id: toastId })
+        toast.error(message)
+      }
+    }
+
+    return transactions.length === receipts.length
   }
 
   const handleAddVestingSchedule = async ({ start, end, amount, beneficiary, tokenAddress }) => {
@@ -145,114 +183,100 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
       beneficiary,
       tokenAddress
     }
-    const toastId = toast.loading("Sign transaction to add a schedule")
-    try {
-      const tx = await addVestingSchedule(signer, schedule)
-      toast.loading(`Adding a schedule...`, { id: toastId })
-      await tx.wait()
-      toast.success("Successfully added a schedule to your vesting contract", { id: toastId })
-      onClose()
-      onSuccess()
-      reset()
-    } catch (e) {
-      console.error(e)
+    const transactions = await addVestingSchedule(signer, schedule)
+    const success = await executeTransactions(signer, transactions)
 
-      // User didn't sign transaction
-      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
-        toast.dismiss(toastId)
-        return
-      }
+    if (!success) return
 
-      // Display error message
-      const message = e?.data?.message || e?.error?.message || e.message;
-      toast.error("Something went wrong adding a schedule to your vesting contract", { id: toastId })
-      toast.error(message)
-    }
+    onClose()
+    onSuccess()
+    reset()
   }
 
   return (
-    <Modal show={show} onClose={onClose}>
-      <form onSubmit={handleSubmit(handleAddVestingSchedule)}>
-        <ModalTitle>Add a vesting schedule</ModalTitle>
-        <ModalBody>
-          <div className="flex flex-col gap-2.5">
-            <div>
-              <Label>Stakeholder Address</Label>
-              <Input
-                placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
-                {...register("beneficiary", { required: true, validate: { isAddress } })}
-              />
-              <span className="text-xs text-red-400">
-                {errors?.beneficiary?.type === "required" && "A valid address is required"}
-                {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
-              </span>
+      <Modal show={show} onClose={onClose}>
+        <form onSubmit={handleSubmit(handleAddVestingSchedule)}>
+          <ModalTitle>Add a vesting schedule</ModalTitle>
+          <ModalBody>
+            <div className="flex flex-col gap-2.5">
+              <div>
+                <Label>Stakeholder Address</Label>
+                <Input
+                  placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
+                  {...register("beneficiary", { required: true, validate: { isAddress } })}
+                />
+                <span className="text-xs text-red-400">
+                  {errors?.beneficiary?.type === "required" && "A valid address is required"}
+                  {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
+                </span>
+              </div>
+              <div>
+                <Label>Start</Label>
+                <Input
+                  type="datetime-local"
+                  {...register("start", { required: true, validate: { startIsInFuture } })}
+                />
+                <span className="text-xs text-red-400">
+                  {errors?.start?.type === "startIsInFuture" && "Vesting has to start in the future"}
+                  {errors?.start?.type === "required" && "A vesting start is required"}
+                </span>
+              </div>
+              <div>
+                <Label>End</Label>
+                <Input
+                  type="datetime-local"
+                  {...register("end", { required: true, validate: { endIsAfterStart } })}
+                />
+                <span className="text-xs text-red-400">
+                  {errors?.end?.type === "endIsAfterStart" && "Vesting cannot end before it has started"}
+                  {errors?.end?.type === "required" && "A vesting end is required"}
+                </span>
+              </div>
+              <div>
+                <Label>Token</Label>
+                <TokenCombobox
+                  tokenAddresses={tokenAddresses}
+                  chainId={chainId}
+                  disabled={!isMultiToken}
+                  control={control}
+                  rules={{ required: true }}
+                  name="tokenAddress"
+                />
+              </div>
+              <div>
+                <Label>Vesting Amount</Label>
+                <CurrencyInput
+                  symbol={tokenSymbol}
+                  placeholder="0.00"
+                  {...register("amount", { required: true, min: 0, validate: { withinTokenAllowance } })}
+                />
+                <span className="text-xs text-red-400">
+                  {errors?.amount?.type === "withinTokenAllowance" && "Vesting contract does not have enough tokens available"}
+                  {errors?.amount?.type === "min" && "The vesting amount cannot be negative"}
+                  {errors?.amount?.type === "required" && "A vesting amount is required"}
+                </span>
+              </div>
             </div>
-            <div>
-              <Label>Start</Label>
-              <Input
-                type="datetime-local"
-                {...register("start", { required: true })}
-              />
-              <span className="text-xs text-red-400">
-                {errors?.start?.type === "required" && "A vesting start is required"}
-              </span>
+          </ModalBody>
+          <ModalActionFooter>
+            <div className="flex justify-between items-center w-full">
+              <p className="text text-gray-800">
+                {tokenAllowance && (
+                  <>Available tokens to allocate: {formatToken(tokenAllowance)}</>
+                )}
+              </p>
+              <PrimaryButton type="submit" disabled={isSubmitting}>
+                <span className="inline-flex items-center gap-1.5">
+                  {isSubmitting && <Spinner className="h-4 w-4" />}
+                  {isSubmitting && <span>Adding schedule</span>}
+                  {!isSubmitting && <span>Add schedule</span>}
+                </span>
+              </PrimaryButton>
             </div>
-            <div>
-              <Label>End</Label>
-              <Input
-                type="datetime-local"
-                {...register("end", { required: true, validate: { endIsAfterStart } })}
-              />
-              <span className="text-xs text-red-400">
-                {errors?.end?.type === "endIsAfterStart" && "Vesting cannot end before it has started"}
-                {errors?.end?.type === "required" && "A vesting end is required"}
-              </span>
-            </div>
-            <div>
-              <Label>Token</Label>
-              <TokenCombobox
-                tokenAddresses={tokenAddresses}
-                chainId={chainId}
-                disabled={!isMultiToken}
-                control={control}
-                rules={{ required: true }}
-                name="token"
-              />
-            </div>
-            <div>
-              <Label>Vesting Amount</Label>
-              <CurrencyInput
-                symbol={tokenSymbol}
-                placeholder="0.00"
-                {...register("amount", { required: true, min: 0, validate: { withinTokenAllowance } })}
-              />
-              <span className="text-xs text-red-400">
-                {errors?.amount?.type === "withinTokenAllowance" && "Vesting contract does not have enough tokens available"}
-                {errors?.amount?.type === "min" && "The vesting amount cannot be negative"}
-                {errors?.amount?.type === "required" && "A vesting amount is required"}
-              </span>
-            </div>
-          </div>
-        </ModalBody>
-        <ModalActionFooter>
-          <div className="flex justify-between items-center w-full">
-            <p className="text text-gray-800">
-              {tokenAllowance && (
-                <>Available tokens to allocate: {formatToken(tokenAllowance)}</>
-              )}
-            </p>
-            <PrimaryButton type="submit" disabled={isSubmitting}>
-              <span className="inline-flex items-center gap-1.5">
-                {isSubmitting && <Spinner className="h-4 w-4" />}
-                {isSubmitting && <span>Adding schedule</span>}
-                {!isSubmitting && <span>Add schedule</span>}
-              </span>
-            </PrimaryButton>
-          </div>
-        </ModalActionFooter>
-      </form>
-    </Modal>
-  )
-}
+          </ModalActionFooter>
+        </form>
+      </Modal>
+    )
+  }
 
-export default AddScheduleModal
+  export default AddScheduleModal

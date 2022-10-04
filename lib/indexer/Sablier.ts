@@ -1,7 +1,8 @@
 import { BigNumber, Contract } from "ethers";
 import { SABLIER_MERIT_CONTRACT_ABI } from "@/lib/contracts/SablierMerit";
 import { getProvider } from "@/lib/provider";
-import { getTokenBalance } from "@/lib/tokens";
+import { getTokenAllowance, getTokenBalance } from "@/lib/tokens";
+import { erc20ABI } from "wagmi";
 
 const getVestedAmount = (startTime, endTime, amount) => {
   const now = Math.round(Date.now() / 1000);
@@ -137,25 +138,40 @@ const getTotalVestedAmounts = (grants) => {
   }, {});
 };
 
-const addVestingScheduleCallback = (contract) => async (signer, schedule) => {
-  const { startTime, endTime, amount, beneficiary, tokenAddress } = schedule
+const addVestingScheduleCallback =
+  (vestingContract, chainId) => async (signer, schedule) => {
+    const { startTime, endTime, amount, beneficiary, tokenAddress } = schedule;
+    const transactions = [];
 
-  const cliff = 0
-  const duration = endTime - startTime
-  const slicePeriodSeconds = 1
-  const revocable = true
+    const totalSeconds = endTime - startTime
+    const safeAmount = amount.sub(amount.mod(totalSeconds))
 
-  const vestingContract = new Contract(contract.address, contract.interface, signer)
-  return await vestingContract.createVestingSchedule(
-    beneficiary,
-    startTime,
-    cliff,
-    duration,
-    slicePeriodSeconds,
-    revocable,
-    amount
-  )
-}
+    const ownerAddress = await signer.getAddress();
+    const spenderAddress = vestingContract.address;
+
+    const allowance = await getTokenAllowance(
+      chainId,
+      tokenAddress,
+      ownerAddress,
+      spenderAddress
+    );
+
+    if (allowance.lt(amount)) {
+      const tokenContract = new Contract(tokenAddress, erc20ABI, vestingContract.provider);
+      const approveTx = await tokenContract.populateTransaction.approve(spenderAddress, amount);
+      transactions.push(approveTx);
+    }
+
+    const createStreamTx = await vestingContract.populateTransaction.createStream(
+      beneficiary,
+      safeAmount,
+      tokenAddress,
+      startTime,
+      endTime
+    )
+    transactions.push(createStreamTx)
+    return transactions
+  };
 
 const releaseAndWithdrawCallback = (contract, grants) => async (signer, id) => {
   const grant = grants.find((grant) => grant.id === id);
@@ -177,9 +193,10 @@ const getReleasableAmountCallback = (contract, grants) => async (id) => {
   }
 };
 
-const getAdminTokenAllowanceCallback = (chainId) => async (tokenAddress, account) => {
-  return await getTokenBalance(chainId, tokenAddress, account)
-}
+const getAdminTokenAllowanceCallback =
+  (chainId) => async (tokenAddress, account) => {
+    return await getTokenBalance(chainId, tokenAddress, account);
+  };
 
 export const getVestingData = async (
   chainId: number,
@@ -207,7 +224,7 @@ export const getVestingData = async (
   // Callbacks
   const releaseAndWithdraw = releaseAndWithdrawCallback(contract, grants);
   const getReleasableAmount = getReleasableAmountCallback(contract, grants);
-  const addVestingSchedule = addVestingScheduleCallback(contract);
+  const addVestingSchedule = addVestingScheduleCallback(contract, chainId);
   const getAdminTokenAllowance = getAdminTokenAllowanceCallback(chainId);
 
   // Capabilities
@@ -228,6 +245,6 @@ export const getVestingData = async (
     getReleasableAmount,
     releaseAndWithdraw,
     addVestingSchedule,
-    getAdminTokenAllowance
+    getAdminTokenAllowance,
   };
 };
