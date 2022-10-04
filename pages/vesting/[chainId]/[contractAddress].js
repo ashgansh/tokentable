@@ -24,6 +24,7 @@ import VestingInsights from "@/components/VestingInsights"
 import VestingTable from "@/components/VestingTable"
 import { useConnectModal } from "@rainbow-me/rainbowkit"
 import AddScheduleModal from "@/components/CreateSchedule"
+import { useHasHydrated } from "@/lib/hooks"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   const { address: account } = useAccount()
@@ -96,6 +97,7 @@ const ConnectCTA = ({ hasGrants }) => {
   const { address: account, isConnecting } = useAccount()
   const [isClosed, setIsClosed] = useState(false)
   const { openConnectModal } = useConnectModal()
+  const hasHydrated = useHasHydrated()
 
   const showCTA = !isClosed && (
     (!account && !isConnecting) ||
@@ -104,6 +106,7 @@ const ConnectCTA = ({ hasGrants }) => {
 
   const handleClose = () => setIsClosed(true)
 
+  if (!hasHydrated) return <></>
   if (!showCTA) return <></>
 
   return (
