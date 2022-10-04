@@ -13,7 +13,9 @@ const GrantRow = ({ grant, chainId }) => {
 
   const now = Date.now() / 1000
   const nowOrEndTime = Math.min(now, grant.revokedTime || grant.endTime)
-  const progressPercentage = Math.round(((nowOrEndTime - grant.startTime) / (grant.endTime - grant.startTime)) * 100)
+  const elapsedTime = Math.max(0, nowOrEndTime - grant.startTime)
+  const duration = grant.endTime - grant.startTime
+  const progressPercentage = Math.round((elapsedTime / duration) * 100)
   const progressPercentageFormatted = `${progressPercentage}%`
 
   const vestedPercentage = Math.round(grant.vestedAmount.mul(10000).div(grant.amount).toNumber() / 100)
@@ -49,10 +51,10 @@ const GrantRow = ({ grant, chainId }) => {
         {vestedStatus()}
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(grant.amount, {shorten: true})} ({vestedPercentageFormatted})
+        {formatToken(grant.amount, {shorten: true})}
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(grant.vestedAmount, {shorten: true})}
+        {formatToken(grant.vestedAmount, {shorten: true})} ({vestedPercentageFormatted})
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         <ProgressBar
