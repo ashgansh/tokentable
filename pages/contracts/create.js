@@ -772,7 +772,7 @@ const Contracts = () => {
               >
                 <AddFirstStakeholderStep
                   vestingContractAddress={vestingContractAddress}
-                  tokenAddress={tokenAddress}
+                  tokenAddress={step === 2 ? tokenAddress : null}
                   goToNextStep={goToVestingPage}
                 />
               </Card>
