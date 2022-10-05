@@ -20,16 +20,16 @@ const VestingInsights = ({ totalAllocated, totalWithdrawn, totalVested, tokenAdd
       amount: totalAllocated
     },
     {
-      name: "Tokens Withdrawn",
-      stat: formatToken(totalWithdrawn, { shorten: true }),
-      percentage: totalAllocated > 0 ? totalWithdrawn.mul(10000).div(totalAllocated).toNumber() / 100 : null,
-      amount: totalWithdrawn
-    },
-    {
       name: "Tokens Vested",
       stat: formatToken(totalVested, { shorten: true }),
       percentage: totalAllocated > 0 ? totalVested.mul(10000).div(totalAllocated).toNumber() / 100 : null,
       amount: totalVested
+    },
+    {
+      name: "Tokens Withdrawn",
+      stat: formatToken(totalWithdrawn, { shorten: true }),
+      percentage: totalAllocated > 0 ? totalWithdrawn.mul(10000).div(totalAllocated).toNumber() / 100 : null,
+      amount: totalWithdrawn
     }
   ]
 
