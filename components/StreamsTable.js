@@ -5,18 +5,34 @@ import { ClipboardIcon, LinkIcon } from "@heroicons/react/24/outline"
 import { useTokenFormatter } from "@/lib/tokens"
 import { shortAddress } from "@/lib/utils"
 import { getAddressBlockExplorerLink } from "@/lib/provider"
+import { BigNumber } from "ethers"
 
 const StreamRow = ({ stream, chainId }) => {
-  const formatToken = useTokenFormatter(chainId, stream.tokenAddress)
+  const formatToken = useTokenFormatter(chainId, stream.token.id)
 
-  const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.beneficiary)
-  const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.beneficiary)
+  const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.receiver)
+  const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.receiver)
+
+  const streamedAmount = (stream) => {
+    const lastKnownStreamedAmount = BigNumber.from(stream.streamedUntilUpdatedAt)
+
+    if (stream.currentFlowRate === "0") return lastKnownStreamedAmount
+
+    const currentFlowTimestamp = Math.max(Number(stream.createdAtTimestamp), Number(stream.updatedAtTimestamp))
+    const currentFlowRate = BigNumber.from(stream.currentFlowRate)
+
+    const now = Date.now() / 1000
+    const timeElapsedInCurrentFlow = Math.round(now - currentFlowTimestamp)
+    const streamedAmountInCurrentFlow = currentFlowRate.mul(timeElapsedInCurrentFlow)
+  
+    return lastKnownStreamedAmount.add(streamedAmountInCurrentFlow)
+  }
 
   return (
     <tr className="border-t">
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
         <div className="flex gap-1 group">
-          {shortAddress(stream.beneficiary)}
+          {shortAddress(stream.receiver)}
           <a className="invisible group-hover:visible hover:cursor-pointer text-gray-500 hover:text-gray-900" href={beneficiaryLink} alt="Block Explorer Link" target="_blank" rel="noreferrer">
             <LinkIcon className="h-4" />
           </a>
@@ -26,21 +42,13 @@ const StreamRow = ({ stream, chainId }) => {
         </div>
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(stream.vestedAmount)}
+        {formatToken(streamedAmount(stream))}
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={stream.startTime} />
+        <Moment format="YYYY-MM-DD" unix date={stream.createdAtTimestamp} />
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={stream.cliffTime} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <Moment format="YYYY-MM-DD" unix date={stream.endTime} />
-      </td>
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        {stream.revokedTime && (
-          <Moment format="YYYY-MM-DD" unix date={stream.revokedTime} />
-        )}
+        <Moment format="YYYY-MM-DD" unix date={stream.updatedAtTimestamp} />
       </td>
     </tr>
   )
@@ -55,16 +63,10 @@ const LoadingGrantRow = () => (
       <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-    </td>
-    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
-    </td>
-    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-      <div className="w-12 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+      <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
   </tr>
 )
@@ -87,13 +89,7 @@ const VestingTable = ({ streams, chainId, isLoading }) => {
                   Start
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Cliff
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  End
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  Revoked
+                  Updated
                 </th>
               </tr>
             </thead>
