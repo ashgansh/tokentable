@@ -12,8 +12,8 @@ import {
   TOKENOPS_VESTING_CREATOR_CONTRACT_ABI,
   TOKENOPS_VESTING_CREATOR_CONTRACT_ADDRESS,
 } from "@/lib/contracts/TokenOpsVestingCreator";
-import { getTokenBalance, getTokenDetails } from "@/lib/tokens";
-import { classNames, formatToken } from "@/lib/utils";
+import { getTokenBalance, getTokenDetails, tokenStore, useTokenPrice } from "@/lib/tokens";
+import { classNames, formatCurrency, formatToken } from "@/lib/utils";
 
 import { PrimaryButton, SecondaryButton } from "@/components/Button";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
@@ -22,6 +22,7 @@ import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting";
 import { useRouter } from "next/router";
 import Allert from "@/components/Alert";
 import { Card } from "pages/sablier/[chainId]/claim/[grantId]";
+import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 
 const useVestingContractStore = create((set) => ({
   step: 0,
@@ -67,12 +68,16 @@ const AddFirstStakeholderStep = ({
     handleSubmit,
     register,
     getValues,
+    watch,
     formState: { errors, isValid, isSubmitting },
   } = useForm();
   const { data: signer } = useSigner();
   const { chain } = useNetwork();
   const [tokenBalanceData, setTokenBalanceData] = useState({});
   const { decimals, symbol, tokenBalance } = tokenBalanceData;
+  const amount = watch("tokenAmount")
+  const tokenPrice = useTokenPrice(chain?.id, tokenAddress)
+  const addToken = tokenStore(state => state.addToken)
 
   useEffect(() => {
     setTokenBalanceData({});
@@ -96,8 +101,16 @@ const AddFirstStakeholderStep = ({
       } catch (e) {}
     };
 
-    retrieveTokenBalance();
-  }, [tokenAddress, chain, vestingContractAddress]);
+    retrieveTokenBalance()
+    addToken(chain.id, tokenAddress)
+
+  }, [tokenAddress, chain, vestingContractAddress, addToken]);
+
+  const getUSDValue = (amount) => {
+    if (!tokenPrice) return
+    if (!amount) return
+    return formatCurrency(tokenPrice * amount, 'USD')
+  }
 
   const withinBalance = (tokenAmount) => {
     try {
@@ -290,6 +303,12 @@ const AddFirstStakeholderStep = ({
                   <span className="text-gray-500 sm:text-sm">{symbol}</span>
                 </div>
               </div>
+              {tokenPrice && amount && (
+                <span className="text-xs text-gray-500 flex gap-1 py-2">
+                  <ArrowsRightLeftIcon className="h-4 w-4" />
+                  {getUSDValue(amount)}
+                </span>
+              )}
             </div>
           </div>
         </div>
