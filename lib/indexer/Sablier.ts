@@ -3,6 +3,7 @@ import { SABLIER_MERIT_CONTRACT_ABI } from "@/lib/contracts/SablierMerit";
 import { getProvider } from "@/lib/provider";
 import { getTokenAllowance, getTokenBalance } from "@/lib/tokens";
 import { erc20ABI } from "wagmi";
+import { isAddress } from "ethers/lib/utils";
 
 const getVestedAmount = (startTime, endTime, amount) => {
   const now = Math.round(Date.now() / 1000);
@@ -90,6 +91,8 @@ const getGrantsAndWithdrawalsAndAdmins = async (contract, filters) => {
   const admins = Array.from(
     new Set(createStreamEvents.map((event) => event.args.sender))
   );
+
+  if (admin && isAddress(admin)) admins.push(admin)
 
   return [grants, withdrawals, admins];
 };
