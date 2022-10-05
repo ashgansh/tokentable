@@ -9,7 +9,6 @@ import { BigNumber } from "ethers"
 
 const StreamRow = ({ stream, chainId }) => {
   const formatToken = useTokenFormatter(chainId, stream.token.id)
-
   const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.receiver)
   const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.receiver)
 

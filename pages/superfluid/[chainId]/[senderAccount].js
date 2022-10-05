@@ -7,6 +7,7 @@ import { LayoutWrapper } from "@/components/LayoutWrapper"
 import StreamsTable from "@/components/StreamsTable"
 import { Framework } from "@superfluid-finance/sdk-core"
 import { getProvider } from "@/lib/provider"
+import { tokenStore } from "@/lib/tokens"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   return (
@@ -23,6 +24,7 @@ const Superfluid = () => {
   const [vestingData, setVestingData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const { query } = useRouter()
+  const addToken = tokenStore(state => state.addToken)
 
   const { senderAccount: senderAccountUnformatted, chainId: contractChainIdString } = query
   const contractChainId = Number(contractChainIdString)
@@ -40,13 +42,15 @@ const Superfluid = () => {
       })
 
       const { data: streams } = await superfluid.query.listStreams({ sender: senderAccount });
-      const vestingData = { streams }
+      const tokenAddresses = Array.from(new Set(streams.map(stream => stream.token.id)))
+      tokenAddresses.forEach(tokenAddress => addToken(contractChainId, tokenAddress))
+      const vestingData = { streams, chainId: contractChainId, tokenAddresses }
       setVestingData(vestingData)
       setIsLoading(false)
     }
 
     retrieveVestingData()
-  }, [senderAccount, contractChainId])
+  }, [senderAccount, contractChainId, addToken])
 
   useEffect(() => {
     retrieveVestingData()
