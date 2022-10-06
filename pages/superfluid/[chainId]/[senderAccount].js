@@ -162,14 +162,10 @@ const Superfluid = () => {
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
-          <div className="flex gap-2 items-center">
-            <div className="flex justify-between w-full">
-              <h1 className="text-gray-800">{senderAccount}</h1>
-              <div className="flex gap-2">
-                {canAddStream && isConnectedWithCorrectChain &&
-                  <PrimaryButton onClick={handleOpenAddStreamModal}>Add Stream</PrimaryButton>}
-              </div>
-            </div>
+          <h1 className="text-gray-800">{senderAccount}</h1>
+          <div className="flex gap-2">
+            {canAddStream && isConnectedWithCorrectChain &&
+              <PrimaryButton onClick={handleOpenAddStreamModal}>Add Stream</PrimaryButton>}
           </div>
         </div>
       </div>
