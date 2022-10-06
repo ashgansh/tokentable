@@ -8,6 +8,8 @@ import { getAddressBlockExplorerLink } from "@/lib/provider"
 import { BigNumber } from "ethers"
 import { useEffect, useMemo, useState } from "react"
 
+const SECONDS_IN_MONTH = 30 * 24 * 60 * 60
+
 const StreamedAmount = ({ chainId, tokenAddress, flowRate, balance, balanceTimestamp }) => {
   const [streamedAmount, setStreamedAmount] = useState(balance)
   const formatToken = useTokenFormatter(chainId, tokenAddress)
@@ -45,7 +47,7 @@ const StreamedAmount = ({ chainId, tokenAddress, flowRate, balance, balanceTimes
 const StreamRow = ({ stream, chainId }) => {
   const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.receiver)
   const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.receiver)
-
+  const formatToken = useTokenFormatter(chainId, stream.token.id)
   const balance = BigNumber.from(stream.streamedUntilUpdatedAt)
   const balanceTimestamp = Math.max(Number(stream.createdAtTimestamp), Number(stream.updatedAtTimestamp))
   const flowRate = BigNumber.from(stream.currentFlowRate)
@@ -63,7 +65,10 @@ const StreamRow = ({ stream, chainId }) => {
           </span>
         </div>
       </td>
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        {formatToken(flowRate.mul(SECONDS_IN_MONTH), {symbol: 'prepend'})}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900 w-1/4">
         <StreamedAmount
           chainId={chainId}
           tokenAddress={stream.token.id}
@@ -96,6 +101,9 @@ const LoadingGrantRow = () => (
     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
       <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+      <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
+    </td>
   </tr>
 )
 
@@ -109,6 +117,9 @@ const VestingTable = ({ streams, chainId, isLoading }) => {
               <tr>
                 <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
                   Stakeholder
+                </th>
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  Amount / Month
                 </th>
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Vested Amount
