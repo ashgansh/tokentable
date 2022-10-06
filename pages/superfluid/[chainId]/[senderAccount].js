@@ -15,6 +15,7 @@ import { PrimaryButton } from "@/components/Button"
 import { useForm } from "react-hook-form"
 import { isAddress, parseEther } from "ethers/lib/utils"
 import Spinner from "@/components/Spinner"
+import toast from "react-hot-toast"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   return (
@@ -39,18 +40,38 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
   const handleAddStream = async ({ monthlyFlowRate, beneficiary, tokenAddress }) => {
     const flowRate = parseEther(monthlyFlowRate).div(30 * 24 * 60 * 60)
     const provider = getProvider(chainId)
-    const sf = await Framework.create({
-      chainId,
-      provider
-    });
-    const createFlowOperation = sf.cfaV1.createFlow({
-      sender: account,
-      receiver: beneficiary,
-      superToken: tokenAddress,
-      flowRate
-    });
-    const txResponse = await createFlowOperation.exec(signer)
-    const txReceipt = await txResponse.wait()
+
+    const toastId = toast.loading("Sign transaction to create stream")
+    try {
+      const sf = await Framework.create({
+        chainId,
+        provider
+      });
+      const createFlowOperation = sf.cfaV1.createFlow({
+        sender: account,
+        receiver: beneficiary,
+        superToken: tokenAddress,
+        flowRate
+      });
+      const txResponse = await createFlowOperation.exec(signer)
+      toast.loading("Creating new stream...", { id: toastId })
+      await txResponse.wait()
+      toast.success("Success", { id: toastId })
+      onClose()
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong...", { id: toastId })
+      toast.error(message)
+    }
   }
 
   return (
