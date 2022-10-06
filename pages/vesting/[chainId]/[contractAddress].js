@@ -4,14 +4,14 @@ import { useAccount, useNetwork, useSigner } from "wagmi"
 import { BigNumber } from "ethers"
 import { isAddress, parseUnits } from "ethers/lib/utils"
 import { useForm } from "react-hook-form"
-import { BookmarkIcon as BookmarkIconOutline, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import { ArrowsRightLeftIcon, BookmarkIcon as BookmarkIconOutline, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { BookmarkIcon as BookmarkIconSolid } from "@heroicons/react/24/solid"
 import toast from "react-hot-toast"
 
 import { getVestingContractDetails } from "@/lib/vesting"
-import { useTokenDetails, useTokenFormatter } from "@/lib/tokens"
+import { useTokenDetails, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
 import { portfolioStore } from "@/lib/portfolio"
-import { formatAddress, classNames } from "@/lib/utils"
+import { formatAddress, classNames, formatCurrency } from "@/lib/utils"
 
 import { CurrencyInput, Input, Label } from "@/components/Input"
 import { LayoutWrapper } from "@/components/LayoutWrapper"
@@ -136,8 +136,118 @@ const ConnectCTA = ({ hasGrants }) => {
     </div>
   )
 }
+
+
+const AddFundsModal = ({ show, onClose, chainId, tokenAddresses, addFunds }) => {
+  const { handleSubmit, register, watch, formState: { errors, isSubmitting } } = useForm()
+  const [tokenBalance, setTokenBalance] = useState(BigNumber.from(0))
+  const { data: signer } = useSigner()
+  const { address: account } = useAccount()
+  const tokenAddress = tokenAddresses?.[0]
+  const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
+  const tokenPrice = useTokenPrice(chainId, tokenAddress)
+  const amount = watch("amount")
+
+  useEffect(() => {
+    setTokenBalance({});
+
+    if (!chainId) return;
+    if (!tokenAddress) return;
+    if (!isAddress(tokenAddress)) return;
+
+    const retrieveTokenBalance = async () => {
+      try {
+        const tokenBalance = await getTokenBalance(chainId, tokenAddress, account)
+        setTokenBalance(tokenBalance);
+      } catch (e) { }
+    };
+
+    retrieveTokenBalance();
+  }, [tokenAddress, chainId, account]);
+
+  const getUSDValue = (amount) => {
+    if (!tokenPrice) return
+    if (!amount) return
+    return formatCurrency(tokenPrice * amount, 'USD')
+  }
+
+  const withinBalance = (tokenAmount) => {
+    try {
+      return tokenBalance.gte(parseUnits(tokenAmount, decimals));
+    } catch (e) { }
+  };
+
+  const handleAddFunds = async ({ amount }) => {
+    const tx = await addFunds(parseUnits(amount, tokenDecimals))
+    const toastId = toast.loading("Sign transaction to add funds")
+    try {
+      const txResponse = await signer.sendTransaction(tx)
+      toast.loading("Adding funds...", { id: toastId })
+      await txResponse.wait()
+      toast.success("Success", { id: toastId })
+      onClose()
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong...", { id: toastId })
+      toast.error(message)
+    }
+  }
+
+  return (
+    <Modal show={show} onClose={onClose}>
+      <form onSubmit={handleSubmit(handleAddFunds)}>
+        <ModalTitle>Add funds</ModalTitle>
+        <ModalBody>
+          <div className="flex flex-col gap-2.5">
+            <div>
+              <Label>Amount</Label>
+              <CurrencyInput
+                symbol={tokenSymbol}
+                placeholder="0.00"
+                {...register("amount", { required: true, min: 0, validate: { withinBalance } })}
+              />
+              {tokenPrice && amount && (
+                <span className="text-xs text-gray-500 flex gap-1 py-2">
+                  <ArrowsRightLeftIcon className="h-4 w-4" />
+                  {getUSDValue(amount)}
+                </span>
+              )}
+              <span className="text-xs text-red-400">
+                {errors?.amount?.type === "withinBalance" && "You don't have enough tokens available"}
+                {errors?.amount?.type === "min" && "The amount cannot be negative"}
+                {errors?.amount?.type === "required" && "A amount is required"}
+              </span>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalActionFooter>
+          <div className="flex justify-between items-center w-full">
+            <PrimaryButton type="submit" disabled={isSubmitting}>
+              <span className="inline-flex items-center gap-1.5">
+                {isSubmitting && <Spinner className="h-4 w-4" />}
+                {isSubmitting && <span>Adding funds</span>}
+                {!isSubmitting && <span>Add funds</span>}
+              </span>
+            </PrimaryButton>
+          </div>
+        </ModalActionFooter>
+      </form>
+    </Modal>
+  )
+}
+
 export const Vesting = ({ chainId: contractChainIdUnformatted, contractAddress: contractAddressUnformatted, filters }) => {
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false)
+  const [showAddFundsModal, setShowAddFundsModal] = useState(false)
   const [vestingData, setVestingData] = useState(null)
   const [vestingMetaData, setVestingMetaData] = useState({})
   const [isLoading, setIsLoading] = useState(true)
@@ -147,11 +257,15 @@ export const Vesting = ({ chainId: contractChainIdUnformatted, contractAddress: 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true)
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false)
 
+  const handleOpenAddFundsModal = () => setShowAddFundsModal(true)
+  const handleCloseAddFundsModal = () => setShowAddFundsModal(false)
+
   const contractChainId = Number(contractChainIdUnformatted)
   const contractAddress = formatAddress(contractAddressUnformatted)
   const currentChainId = chain?.id
-  const { tokenAddresses, addVestingSchedule, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
+  const { tokenAddresses, addVestingSchedule, addFunds, capabilities, admins, getAdminTokenAllowance } = vestingData || {}
   const canAddSchedule = !!capabilities?.addVestingSchedule && admins.includes(account)
+  const canAddFunds = !!capabilities?.fundable && admins.includes(account)
   const isMultiToken = !!capabilities?.multiToken
   const isConnectedWithCorrectChain = currentChainId === contractChainId
 
@@ -190,6 +304,17 @@ export const Vesting = ({ chainId: contractChainIdUnformatted, contractAddress: 
             isMultiToken={isMultiToken}
           />
         )}
+      {contractChainId !== undefined &&
+        tokenAddresses !== undefined &&
+        addFunds !== undefined && (
+          <AddFundsModal
+            show={showAddFundsModal}
+            onClose={handleCloseAddFundsModal}
+            chainId={contractChainId}
+            tokenAddresses={tokenAddresses}
+            addFunds={addFunds}
+          />
+        )}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 items-center">
@@ -204,9 +329,11 @@ export const Vesting = ({ chainId: contractChainIdUnformatted, contractAddress: 
           </div>
           <div className="flex gap-2">
             <BookmarkButton chainId={contractChainId} contractAddress={contractAddress} />
+            {canAddFunds && isConnectedWithCorrectChain &&
+              <PrimaryButton onClick={handleOpenAddFundsModal}>Add Funds</PrimaryButton>}
             {canAddSchedule && isConnectedWithCorrectChain &&
               <PrimaryButton onClick={handleOpenAddScheduleModal}>Add Schedule</PrimaryButton>}
-            {canAddSchedule && !isConnectedWithCorrectChain &&
+            {(canAddSchedule || canAddFunds) && !isConnectedWithCorrectChain &&
               <SwitchChainButton chainId={contractChainId} />}
           </div>
         </div>
