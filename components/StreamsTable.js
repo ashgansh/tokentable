@@ -6,26 +6,49 @@ import { useTokenFormatter } from "@/lib/tokens"
 import { shortAddress } from "@/lib/utils"
 import { getAddressBlockExplorerLink } from "@/lib/provider"
 import { BigNumber } from "ethers"
+import { useEffect, useMemo, useState } from "react"
+
+const StreamedAmount = ({ chainId, tokenAddress, flowRate, balance, balanceTimestamp }) => {
+  const [streamedAmount, setStreamedAmount] = useState(balance)
+  const formatToken = useTokenFormatter(chainId, tokenAddress)
+
+  const balanceTimestampMs = useMemo(
+    () => BigNumber.from(balanceTimestamp).mul(1000),
+    [balanceTimestamp]
+  );
+
+  useEffect(() => {
+    if (flowRate.isZero()) return
+
+    let stopAnimation = false
+    let lastAnimationTimestamp = 0
+
+    const animationStep = (currentAnimationTimestamp) => {
+      if (stopAnimation) return
+
+      if (currentAnimationTimestamp - lastAnimationTimestamp > 80) {
+        const now = BigNumber.from(Math.round(new Date().valueOf()))
+        const streamedBalanceSinceTimestamp = now.sub(balanceTimestampMs).mul(flowRate).div(1000)
+        const streamedAmount = balance.add(streamedBalanceSinceTimestamp)
+        setStreamedAmount(streamedAmount)
+        lastAnimationTimestamp = currentAnimationTimestamp
+      }
+      window.requestAnimationFrame(animationStep)
+    }
+    window.requestAnimationFrame(animationStep)
+    return () => { stopAnimation = true }
+  }, [balance, balanceTimestampMs, flowRate])
+
+  return <>{formatToken(streamedAmount, {digits: 6, symbol: 'prepend'})}</>
+}
 
 const StreamRow = ({ stream, chainId }) => {
-  const formatToken = useTokenFormatter(chainId, stream.token.id)
   const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.receiver)
   const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.receiver)
 
-  const streamedAmount = (stream) => {
-    const lastKnownStreamedAmount = BigNumber.from(stream.streamedUntilUpdatedAt)
-
-    if (stream.currentFlowRate === "0") return lastKnownStreamedAmount
-
-    const currentFlowTimestamp = Math.max(Number(stream.createdAtTimestamp), Number(stream.updatedAtTimestamp))
-    const currentFlowRate = BigNumber.from(stream.currentFlowRate)
-
-    const now = Date.now() / 1000
-    const timeElapsedInCurrentFlow = Math.round(now - currentFlowTimestamp)
-    const streamedAmountInCurrentFlow = currentFlowRate.mul(timeElapsedInCurrentFlow)
-  
-    return lastKnownStreamedAmount.add(streamedAmountInCurrentFlow)
-  }
+  const balance = BigNumber.from(stream.streamedUntilUpdatedAt)
+  const balanceTimestamp = Math.max(Number(stream.createdAtTimestamp), Number(stream.updatedAtTimestamp))
+  const flowRate = BigNumber.from(stream.currentFlowRate)
 
   return (
     <tr className="border-t">
@@ -41,7 +64,13 @@ const StreamRow = ({ stream, chainId }) => {
         </div>
       </td>
       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {formatToken(streamedAmount(stream))}
+        <StreamedAmount
+          chainId={chainId}
+          tokenAddress={stream.token.id}
+          balance={balance}
+          balanceTimestamp={balanceTimestamp}
+          flowRate={flowRate}
+        />
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         <Moment format="YYYY-MM-DD" unix date={stream.createdAtTimestamp} />
