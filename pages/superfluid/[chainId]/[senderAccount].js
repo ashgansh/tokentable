@@ -1,5 +1,5 @@
 import { useRouter } from "next/router"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { formatAddress, classNames } from "@/lib/utils"
 
@@ -12,10 +12,15 @@ import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Mo
 import { Label, Input } from "@/components/Input"
 import { useAccount, useNetwork, useSigner } from "wagmi"
 import { PrimaryButton } from "@/components/Button"
-import { useForm } from "react-hook-form"
+import { useController, useForm } from "react-hook-form"
 import { isAddress, parseEther } from "ethers/lib/utils"
 import Spinner from "@/components/Spinner"
 import toast from "react-hot-toast"
+import { Combobox } from "@headlessui/react"
+import { ChevronUpDownIcon, EnvelopeIcon } from "@heroicons/react/24/outline"
+import axios from "axios"
+
+const SUPERFLUID_ASSETS_BASE_PATH = "https://raw.githubusercontent.com/superfluid-finance/assets/master/public"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   return (
@@ -28,26 +33,123 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
   )
 }
 
-const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
-  const { handleSubmit, register, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: {
-      tokenAddress: "0x5943f705abb6834cad767e6e4bb258bc48d9c947" //goerli superETH
+const TokenCombobox = ({ chainId, tokens, ...args }) => {
+  const [query, setQuery] = useState('')
+  const [tokenIcons, setTokenIcons] = useState([])
+  const { field: { value, onChange } } = useController(args);
+
+  const tokenDetails = useMemo(() => {
+    return tokens.reduce((tokenDetails, token) => {
+      const tokenIcon = tokenIcons.find(tokenIcon => tokenIcon.id === token.id)
+      return { ...tokenDetails, [token.id]: { ...token, iconUrl: tokenIcon?.iconUrl } }
+    }, {})
+  }, [tokens, tokenIcons])
+
+  useEffect(() => {
+    const retreiveTokenManifests = async () => {
+      const tokenManifests = await Promise.all(tokens.map(async token => {
+        const manifestURL = `${SUPERFLUID_ASSETS_BASE_PATH}/tokens/${token.symbol.toLowerCase()}/manifest.json`
+        const manifestResponse = await axios.get(manifestURL)
+        const manifest = manifestResponse.data
+        return { id: token.id, iconUrl: manifest.svgIconPath }
+      }))
+      setTokenIcons(tokenManifests)
     }
-  })
+
+    retreiveTokenManifests()
+  }, [tokens])
+
+  const filteredTokens =
+    query === ''
+      ? tokens
+      : tokens.filter(token =>
+        token.name.toLowerCase().includes(query.toLowerCase()) ||
+        token.symbol.toLowerCase().includes(query.toLowerCase()))
+
+  return (
+    <Combobox as="div" value={value} onChange={onChange}>
+      {({ open }) => (
+        <div className="relative">
+          <div className="relative mt-1 rounded-md shadow-sm">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              {!open && value && <img src={`${SUPERFLUID_ASSETS_BASE_PATH}${tokenDetails?.[value]?.iconUrl}`} className="h-6 w-6" alt="" />}
+            </div>
+            <Combobox.Input
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
+              onChange={(event) => setQuery(event.target.value)}
+              displayValue={(tokenAddress) => tokenDetails?.[tokenAddress]?.name}
+            />
+          </div>
+          <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
+            <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          </Combobox.Button>
+          <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+            {filteredTokens.map((filteredToken) => {
+              const token = tokenDetails?.[filteredToken.id]
+              return (
+                <Combobox.Option
+                  key={token.id}
+                  value={token.id}
+                  className={({ active }) =>
+                    classNames(
+                      'relative cursor-default select-none py-2 pl-3 pr-9',
+                      active ? 'bg-indigo-600 text-white' : 'text-gray-900'
+                    )
+                  }
+                >
+                  {({ selected }) => (
+                    <div className="flex items-center flex-shrink-0 rounded-full gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`${SUPERFLUID_ASSETS_BASE_PATH}${token.iconUrl}`} className="h-6 w-6" alt={token.name} />
+                      <span className={classNames('block truncate', selected && 'font-semibold')}>
+                        {token.name}
+                      </span>
+                    </div>
+                  )}
+                </Combobox.Option>
+              )
+            })}
+          </Combobox.Options>
+        </div>
+      )}
+    </Combobox>
+  )
+}
+
+const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
+  const [superTokens, setSuperTokens] = useState([])
+  const { handleSubmit, register, control, formState: { errors, isSubmitting } } = useForm()
   const { address: account } = useAccount()
   const { data: signer } = useSigner()
+
+  useEffect(() => {
+    if (!chainId) return
+
+    const retrieveSuperTokens = async () => {
+      const provider = getProvider(chainId)
+      const superfluid = await Framework.create({
+        chainId,
+        provider
+      });
+      const { data: tokens } = await superfluid.query.listAllSuperTokens({ isListed: true })
+      setSuperTokens(tokens)
+    }
+
+    retrieveSuperTokens()
+  }, [chainId])
+
 
   const handleAddStream = async ({ monthlyFlowRate, beneficiary, tokenAddress }) => {
     const flowRate = parseEther(monthlyFlowRate).div(30 * 24 * 60 * 60)
     const provider = getProvider(chainId)
+    const superfluid = await Framework.create({
+      chainId,
+      provider
+    });
 
     const toastId = toast.loading("Sign transaction to create stream")
     try {
-      const sf = await Framework.create({
-        chainId,
-        provider
-      });
-      const createFlowOperation = sf.cfaV1.createFlow({
+      const createFlowOperation = superfluid.cfaV1.createFlow({
         sender: account,
         receiver: beneficiary,
         superToken: tokenAddress,
@@ -100,9 +202,13 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
             </div>
             <div>
               <Label>Super Token Address</Label>
-              <Input
+              <TokenCombobox
                 type="text"
-                {...register("tokenAddress", { required: true, validate: { isAddress } })}
+                tokens={superTokens}
+                chainId={chainId}
+                control={control}
+                rules={{ required: true }}
+                name="tokenAddress"
               />
               <span className="text-xs text-red-400">
                 {errors?.tokenAddress?.type === "required" && "A valid address is required"}
