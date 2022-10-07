@@ -5,6 +5,7 @@ import TokenOpsLogo from "../images/tokenops-logo.svg";
 import AccountButton from "./AccountButton";
 import Link from "next/link";
 import { SecondaryButton } from "./Button";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Header() {
   return (
@@ -40,7 +41,7 @@ export default function Header() {
             </SecondaryButton> */}
           </div>
           <div className="flex flex-shrink-0 ml-4">
-            <AccountButton />
+            <ConnectButton showBalance={{smallScreen: false, largeScreen: false}} />
           </div>
         </div>
       </div>
