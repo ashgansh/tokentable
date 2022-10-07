@@ -1,7 +1,7 @@
 import '../styles/globals.css'
 import '@rainbow-me/rainbowkit/styles.css';
 
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { WagmiConfig } from 'wagmi';
 import { Toaster } from 'react-hot-toast';
 import { useAutoConnectSafe, wagmiClient, chains } from '@/lib/wagmi';
@@ -15,7 +15,7 @@ function MyApp({ Component, pageProps }) {
   return (
     <WagmiConfig client={wagmiClient}>
       <AutoConnectSafe>
-        <RainbowKitProvider chains={chains}>
+        <RainbowKitProvider chains={chains} theme={lightTheme({accentColor: '#1455FE'})}>
           <Component {...pageProps} />
           <Toaster position="bottom-center" />
         </RainbowKitProvider>
