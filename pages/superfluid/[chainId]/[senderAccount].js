@@ -24,12 +24,12 @@ import StreamsTable from "@/components/StreamsTable"
 const SUPERFLUID_ASSETS_BASE_PATH = "https://raw.githubusercontent.com/superfluid-finance/assets/master/public"
 const DEFAULT_TOKEN_ICON = "/icons/default-token.png"
 
-const VestingDashboard = ({ vestingData, isLoading }) => {
+const VestingDashboard = ({ vestingData, isLoading, onCancelStream }) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       <div>
         <h2 className="text-lg py-2">Streams</h2>
-        <StreamsTable streams={vestingData?.streams || []} chainId={vestingData?.chainId} isLoading={isLoading} />
+        <StreamsTable streams={vestingData?.streams || []} chainId={vestingData?.chainId} isLoading={isLoading} onCancelStream={onCancelStream} />
       </div>
     </div>
   )
@@ -128,7 +128,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
   )
 }
 
-const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
+const AddStreamModal = ({ show, onClose, chainId }) => {
   const [superTokens, setSuperTokens] = useState([])
   const [selectedTokenBalance, setSelectedTokenBalance] = useState()
   const { handleSubmit, register, control, watch, formState: { errors, isSubmitting } } = useForm()
@@ -224,7 +224,6 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
       toast.error(message)
     }
   }
-
   return (
     <Modal show={show} onClose={onClose}>
       <form onSubmit={handleSubmit(handleAddStream)}>
@@ -298,6 +297,7 @@ const Superfluid = () => {
   const addToken = tokenStore(state => state.addToken)
   const { chain } = useNetwork()
   const { address: account } = useAccount()
+  const { data: signer } = useSigner()
 
   const handleOpenAddStreamModal = () => setShowAddStreamModal(true)
   const handleCloseAddStreamModal = () => setShowAddStreamModal(false)
@@ -308,6 +308,7 @@ const Superfluid = () => {
   const currentChainId = chain?.id
 
   const canAddStream = account === senderAccount
+  const canCancelStream = account === senderAccount
   const isConnectedWithCorrectChain = currentChainId === contractChainId
 
   const retrieveVestingData = useCallback(() => {
@@ -336,12 +337,57 @@ const Superfluid = () => {
     retrieveVestingData()
   }, [retrieveVestingData])
 
+  useEffect(() => {
+    const listenToEvents = async () => {
+      const provider = getProvider(contractChainId)
+      const superfluid = await Framework.create({
+        chainId: contractChainId,
+        provider
+      })
+      superfluid.query.on(retrieveVestingData, 2000, senderAccount)
+    }
+    listenToEvents()
+  }, [retrieveVestingData, contractChainId, senderAccount])
+
+  const handleCancelStream = async (beneficiary, tokenAddress) => {
+    const provider = getProvider(contractChainId)
+    const superfluid = await Framework.create({
+      chainId: contractChainId,
+      provider
+    });
+
+    const toastId = toast.loading("Sign transaction to cancel stream")
+    try {
+      const deleteFlowOperation = superfluid.cfaV1.deleteFlow({
+        sender: account,
+        receiver: beneficiary,
+        superToken: tokenAddress
+      });
+      const txResponse = await deleteFlowOperation.exec(signer)
+      toast.loading("Canceling stream...", { id: toastId })
+      await txResponse.wait()
+      toast.success("Success", { id: toastId })
+    } catch (e) {
+      console.error(e)
+
+      // User didn't sign transaction
+      if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // Display error message
+      const message = e?.data?.message || e?.error?.message || e.message;
+      toast.error("Something went wrong...", { id: toastId })
+      toast.error(message)
+    }
+  }
+
   return (
     <LayoutWrapper>
       <AddStreamModal
         show={showAddStreamModal}
         onClose={handleCloseAddStreamModal}
-        onSuccess={retrieveVestingData}
         chainId={contractChainId}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
@@ -354,7 +400,11 @@ const Superfluid = () => {
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        <VestingDashboard vestingData={vestingData} isLoading={isLoading} />
+        <VestingDashboard
+          vestingData={vestingData}
+          isLoading={isLoading}
+          onCancelStream={canCancelStream && isConnectedWithCorrectChain && handleCancelStream}
+        />
       </div>
     </LayoutWrapper>
   )

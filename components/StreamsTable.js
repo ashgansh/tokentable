@@ -1,12 +1,13 @@
 import Moment from "react-moment"
 
-import { ClipboardIcon, LinkIcon } from "@heroicons/react/24/outline"
+import { ClipboardIcon, LinkIcon, XMarkIcon } from "@heroicons/react/24/outline"
 
 import { useTokenFormatter } from "@/lib/tokens"
 import { shortAddress } from "@/lib/utils"
 import { getAddressBlockExplorerLink } from "@/lib/provider"
 import { BigNumber } from "ethers"
 import { useEffect, useMemo, useState } from "react"
+import { PrimaryButton, SecondaryButton } from "./Button"
 
 const SECONDS_IN_MONTH = 30 * 24 * 60 * 60
 
@@ -41,16 +42,20 @@ const StreamedAmount = ({ chainId, tokenAddress, flowRate, balance, balanceTimes
     return () => { stopAnimation = true }
   }, [balance, balanceTimestampMs, flowRate])
 
-  return <>{formatToken(streamedAmount, {digits: 6, symbol: 'prepend'})}</>
+  return <>{formatToken(streamedAmount, { digits: 6, symbol: 'prepend' })}</>
 }
 
-const StreamRow = ({ stream, chainId }) => {
+const StreamRow = ({ stream, chainId, onCancelStream }) => {
   const beneficiaryLink = getAddressBlockExplorerLink(chainId, stream.receiver)
   const copyBeneficiaryToClipboard = () => navigator.clipboard.writeText(stream.receiver)
   const formatToken = useTokenFormatter(chainId, stream.token.id)
   const balance = BigNumber.from(stream.streamedUntilUpdatedAt)
   const balanceTimestamp = Math.max(Number(stream.createdAtTimestamp), Number(stream.updatedAtTimestamp))
   const flowRate = BigNumber.from(stream.currentFlowRate)
+
+  const handleCancelStream = () => {
+    onCancelStream(stream.receiver, stream.token.id)
+  }
 
   return (
     <tr className="border-t">
@@ -66,7 +71,7 @@ const StreamRow = ({ stream, chainId }) => {
         </div>
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        {formatToken(flowRate.mul(SECONDS_IN_MONTH), {symbol: 'prepend'})}
+        {formatToken(flowRate.mul(SECONDS_IN_MONTH), { symbol: 'prepend' })}
       </td>
       <td className="whitespace-nowrap px-4 py-4 text-sm font-medium text-gray-900 w-1/4">
         <StreamedAmount
@@ -82,6 +87,10 @@ const StreamRow = ({ stream, chainId }) => {
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         <Moment format="YYYY-MM-DD" unix date={stream.updatedAtTimestamp} />
+      </td>
+      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        {onCancelStream && !flowRate.isZero() &&
+          <SecondaryButton onClick={handleCancelStream}><XMarkIcon className="h-4 w-4" /></SecondaryButton>}
       </td>
     </tr>
   )
@@ -104,10 +113,12 @@ const LoadingGrantRow = () => (
     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
       <div className="w-16 bg-gray-300 rounded-md animate-pulse text-sm">&nbsp;</div>
     </td>
+    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+    </td>
   </tr>
 )
 
-const VestingTable = ({ streams, chainId, isLoading }) => {
+const VestingTable = ({ streams, chainId, isLoading, onCancelStream }) => {
   return (
     <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
@@ -130,10 +141,12 @@ const VestingTable = ({ streams, chainId, isLoading }) => {
                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Updated
                 </th>
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white">
-              {streams.map((stream, idx) => <StreamRow key={idx} stream={stream} chainId={chainId} />)}
+              {streams.map((stream, idx) => <StreamRow key={idx} stream={stream} chainId={chainId} onCancelStream={onCancelStream} />)}
               {isLoading && <LoadingGrantRow />}
             </tbody>
           </table>
