@@ -29,7 +29,11 @@ export default function Header() {
               Portfolio
             </a>
           </Link>
-
+          {/* <Link href="/contracts/create">
+            <a className="text-base font-medium text-gray-800 hover:text-gray-900 mx-3">
+              Vestings
+            </a>
+          </Link> */}
           <Link href="/demo">
             <a className="text-base font-medium text-gray-500 hover:text-gray-900 mx-3">
               Demo
@@ -41,7 +45,9 @@ export default function Header() {
             </SecondaryButton> */}
           </div>
           <div className="flex flex-shrink-0 ml-4">
-            <ConnectButton showBalance={false} />
+            <ConnectButton
+              showBalance={{ smallScreen: false, largeScreen: false }}
+            />
           </div>
         </div>
       </div>

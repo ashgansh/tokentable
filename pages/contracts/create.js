@@ -12,7 +12,12 @@ import {
   TOKENOPS_VESTING_CREATOR_CONTRACT_ABI,
   TOKENOPS_VESTING_CREATOR_CONTRACT_ADDRESS,
 } from "@/lib/contracts/TokenOpsVestingCreator";
-import { getTokenBalance, getTokenDetails, tokenStore, useTokenPrice } from "@/lib/tokens";
+import {
+  getTokenBalance,
+  getTokenDetails,
+  tokenStore,
+  useTokenPrice,
+} from "@/lib/tokens";
 import { classNames, formatCurrency, formatToken } from "@/lib/utils";
 
 import { PrimaryButton, SecondaryButton } from "@/components/Button";
@@ -23,6 +28,8 @@ import { useRouter } from "next/router";
 import Allert from "@/components/Alert";
 import { Card } from "pages/sablier/[chainId]/claim/[grantId]";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
+import Radio from "@/components/Radio";
+import { Input, Label } from "@/components/Input";
 
 const useVestingContractStore = create((set) => ({
   step: 0,
@@ -75,9 +82,9 @@ const AddFirstStakeholderStep = ({
   const { chain } = useNetwork();
   const [tokenBalanceData, setTokenBalanceData] = useState({});
   const { decimals, symbol, tokenBalance } = tokenBalanceData;
-  const amount = watch("tokenAmount")
-  const tokenPrice = useTokenPrice(chain?.id, tokenAddress)
-  const addToken = tokenStore(state => state.addToken)
+  const amount = watch("tokenAmount");
+  const tokenPrice = useTokenPrice(chain?.id, tokenAddress);
+  const addToken = tokenStore((state) => state.addToken);
 
   useEffect(() => {
     setTokenBalanceData({});
@@ -101,16 +108,15 @@ const AddFirstStakeholderStep = ({
       } catch (e) {}
     };
 
-    retrieveTokenBalance()
-    addToken(chain.id, tokenAddress)
-
+    retrieveTokenBalance();
+    addToken(chain.id, tokenAddress);
   }, [tokenAddress, chain, vestingContractAddress, addToken]);
 
   const getUSDValue = (amount) => {
-    if (!tokenPrice) return
-    if (!amount) return
-    return formatCurrency(tokenPrice * amount, 'USD')
-  }
+    if (!tokenPrice) return;
+    if (!amount) return;
+    return formatCurrency(tokenPrice * amount, "USD");
+  };
 
   const withinBalance = (tokenAmount) => {
     try {
@@ -594,12 +600,13 @@ const CreateVestingContractStep = ({ goToNextStep }) => {
     >
       <div className="flex flex-col justify-between gap-4 h-full">
         <div>
-          <h3 className="text-lg font-medium leading-6 text-gray-900">Token</h3>
-          <div className="mt-2 max-w-xl text-sm text-gray-500">
-            <p>Insert the token address you want to vest.</p>
-          </div>
-          <div className="mt-1 w-full sm:max-w-md">
-            <input
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            Select a protocol
+          </h3>
+          <Radio></Radio>
+          <div className="mt-3 w-full sm:max-w-md">
+            <Label>Choose a token</Label>
+            <Input
               type="text"
               name="tokenAddress"
               id="tokenAddress"
