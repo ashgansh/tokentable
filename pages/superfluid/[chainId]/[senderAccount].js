@@ -21,6 +21,7 @@ import { ChevronUpDownIcon, EnvelopeIcon } from "@heroicons/react/24/outline"
 import axios from "axios"
 
 const SUPERFLUID_ASSETS_BASE_PATH = "https://raw.githubusercontent.com/superfluid-finance/assets/master/public"
+const DEFAULT_TOKEN_ICON = "/icons/default-token.png"
 
 const VestingDashboard = ({ vestingData, isLoading }) => {
   return (
@@ -48,10 +49,12 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
   useEffect(() => {
     const retreiveTokenManifests = async () => {
       const tokenManifests = await Promise.all(tokens.map(async token => {
-        const manifestURL = `${SUPERFLUID_ASSETS_BASE_PATH}/tokens/${token.symbol.toLowerCase()}/manifest.json`
-        const manifestResponse = await axios.get(manifestURL)
-        const manifest = manifestResponse.data
-        return { id: token.id, iconUrl: manifest.svgIconPath }
+        try {
+          const manifestURL = `${SUPERFLUID_ASSETS_BASE_PATH}/tokens/${token.symbol.toLowerCase()}/manifest.json`
+          const manifestResponse = await axios.get(manifestURL)
+          const manifest = manifestResponse.data
+          return { id: token.id, iconUrl: manifest.svgIconPath }
+        } catch (_) { return { id: token.id } }
       }))
       setTokenIcons(tokenManifests)
     }
@@ -66,13 +69,20 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
         token.name.toLowerCase().includes(query.toLowerCase()) ||
         token.symbol.toLowerCase().includes(query.toLowerCase()))
 
+  const selectedValueIconURL = tokenDetails?.[value]?.iconUrl && `${SUPERFLUID_ASSETS_BASE_PATH}${tokenDetails?.[value]?.iconUrl}`
+
   return (
     <Combobox as="div" value={value} onChange={onChange}>
       {({ open }) => (
         <div className="relative">
           <div className="relative mt-1 rounded-md shadow-sm">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              {!open && value && <img src={`${SUPERFLUID_ASSETS_BASE_PATH}${tokenDetails?.[value]?.iconUrl}`} className="h-6 w-6" alt="" />}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={(!open && value && selectedValueIconURL) ? selectedValueIconURL : DEFAULT_TOKEN_ICON}
+                className="h-6 w-6"
+                alt="Token Icon"
+              />
             </div>
             <Combobox.Input
               className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -86,6 +96,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
           <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
             {filteredTokens.map((filteredToken) => {
               const token = tokenDetails?.[filteredToken.id]
+              const tokenIconUrl = token?.iconUrl ? `${SUPERFLUID_ASSETS_BASE_PATH}${token.iconUrl}` : DEFAULT_TOKEN_ICON
               return (
                 <Combobox.Option
                   key={token.id}
@@ -100,7 +111,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                   {({ selected }) => (
                     <div className="flex items-center flex-shrink-0 rounded-full gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`${SUPERFLUID_ASSETS_BASE_PATH}${token.iconUrl}`} className="h-6 w-6" alt={token.name} />
+                      <img src={tokenIconUrl} className="h-6 w-6" alt={token.name} />
                       <span className={classNames('block truncate', selected && 'font-semibold')}>
                         {token.name}
                       </span>
