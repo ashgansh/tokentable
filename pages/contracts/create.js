@@ -25,7 +25,6 @@ import { LayoutWrapper } from "@/components/LayoutWrapper";
 import Spinner from "@/components/Spinner";
 import { TOKENOPS_VESTING_CONTRACT_ABI } from "@/lib/contracts/TokenOpsVesting";
 import { useRouter } from "next/router";
-import Allert from "@/components/Alert";
 import { Card } from "pages/sablier/[chainId]/claim/[grantId]";
 import { ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 import Radio from "@/components/Radio";
@@ -652,7 +651,7 @@ const CreateVestingContractProgressBar = ({ currentStep }) => {
   ];
 
   return (
-    <nav aria-label="Progress">
+    <nav aria-label="Progress " className="min-w-max">
       <ol role="list" className="overflow-hidden">
         {steps.map((step, stepIdx) => (
           <li
@@ -745,7 +744,6 @@ const Contracts = () => {
   const goToVestingPage = () => push(`/vesting/5/${vestingContractAddress}`);
   return (
     <LayoutWrapper>
-      <Allert />
       <div className="mx-auto mt-8">
         <div>
           <div className="flex gap-8">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RadioGroup } from "@headlessui/react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
+import Alert from "./Alert";
 
 const mailingLists = [
   {
@@ -18,8 +19,14 @@ const mailingLists = [
   {
     id: 3,
     title: "TokenOps",
-    description:
-      "Get all the power of TokenOps at your disposal. Use advanced functionalities such post-vesting lockups, or deploy on any evm-based chain. (coming soon)",
+    description: (
+      <div>
+        <Alert />
+        Get all the power of TokenOps at your disposal. Use advanced
+        functionalities such post-vesting lockups, or deploy on any evm-based
+        chain. (coming soon)
+      </div>
+    ),
   },
 ];
 
@@ -34,8 +41,7 @@ export default function Radio() {
 
   return (
     <RadioGroup value={selectedMailingLists} onChange={setSelectedMailingLists}>
-      <RadioGroup.Label className="text-base font-medium text-gray-900">
-      </RadioGroup.Label>
+      <RadioGroup.Label className="text-base font-medium text-gray-900"></RadioGroup.Label>
 
       <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
         {mailingLists.map((mailingList) => (
@@ -45,7 +51,9 @@ export default function Radio() {
             className={({ checked, active }) =>
               classNames(
                 checked ? "border-transparent" : "border-gray-300",
-                active ? "border-tokenops-primary-600 ring-2 ring-tokenops-primary-600" : "",
+                active
+                  ? "border-tokenops-primary-600 ring-2 ring-tokenops-primary-600"
+                  : "",
                 "relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
               )
             }
@@ -66,7 +74,7 @@ export default function Radio() {
                     >
                       {mailingList.description}
                     </RadioGroup.Description>
-                 </span>
+                  </span>
                 </span>
                 <CheckCircleIcon
                   className={classNames(
@@ -78,7 +86,9 @@ export default function Radio() {
                 <span
                   className={classNames(
                     active ? "border" : "border-2",
-                    checked ? "border-tokenops-primary-600" : "border-transparent",
+                    checked
+                      ? "border-tokenops-primary-600"
+                      : "border-transparent",
                     "pointer-events-none absolute -inset-px rounded-lg"
                   )}
                   aria-hidden="true"
