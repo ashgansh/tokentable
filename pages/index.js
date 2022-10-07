@@ -1,35 +1,40 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { isAddress } from "ethers/lib/utils";
 import axios from "axios";
-import Link from "next/link"
+import Link from "next/link";
 
 import { PlusIcon, QueueListIcon } from "@heroicons/react/24/outline";
 
-import { formatCurrency, formatAmount } from "@/lib/utils"
-import { findVestingContractChainId, getVestingContractDetails } from "@/lib/vesting"
-import { useTokenCirculatingSupply, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
-import { usePortfolioItems } from "@/lib/portfolio"
-import { useHasHydrated } from "@/lib/hooks"
+import { formatCurrency, formatAmount } from "@/lib/utils";
+import {
+  findVestingContractChainId,
+  getVestingContractDetails,
+} from "@/lib/vesting";
+import {
+  useTokenCirculatingSupply,
+  useTokenFormatter,
+  useTokenPrice,
+} from "@/lib/tokens";
+import { usePortfolioItems } from "@/lib/portfolio";
+import { useHasHydrated } from "@/lib/hooks";
 
-import PortfolioContract from "@/components/PortfolioContract"
+import PortfolioContract from "@/components/PortfolioContract";
 import PortfolioPosition from "@/components/PortfolioPosition";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
 import { chainId, useAccount } from "wagmi";
 import { useRouter } from "next/router";
-
-
-
+import { PrimaryButton } from "@/components/Button";
 
 export const NoPortfolioItems = () => {
   const exampleContracts = [
     {
-      address: '0x2a7d59e327759acd5d11a8fb652bf4072d28ac04',
+      address: "0x2a7d59e327759acd5d11a8fb652bf4072d28ac04",
     },
     ,
-  ]
+  ];
 
   const {
     reset,
@@ -38,27 +43,30 @@ export const NoPortfolioItems = () => {
     setValue,
     formState: { errors, isSubmitSuccessful, isSubmitting },
   } = useForm();
-  const { push } = useRouter()
-  const [showIndexing, setShowIndexing] = useState(false)
+  const { push } = useRouter();
+  const [showIndexing, setShowIndexing] = useState(false);
 
   const handleAddContract = async (data) => {
-    const chainId = await findVestingContractChainId(data.vestingContract)
-    const isIndexed = !!chainId
+    const chainId = await findVestingContractChainId(data.vestingContract);
+    const isIndexed = !!chainId;
 
     if (isIndexed) {
-      const details = await getVestingContractDetails(chainId, data.vestingContract)
-      push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`)
-      return
+      const details = await getVestingContractDetails(
+        chainId,
+        data.vestingContract
+      );
+      push(`/vesting/${details.meta.chainId}/${details.meta.contractAddress}`);
+      return;
     }
 
     await axios.post("https://formspree.io/f/xaykqkok", data);
-    setShowIndexing(true)
+    setShowIndexing(true);
     reset();
   };
 
   const handleTryContract = (contractAddress) => {
-    setValue("vestingContract", contractAddress)
-  }
+    setValue("vestingContract", contractAddress);
+  };
 
   return (
     <div className="mx-auto max-w-lg">
@@ -84,26 +92,35 @@ export const NoPortfolioItems = () => {
               })}
             />
             <span className="text-xs text-red-400">
-              {errors?.beneficiaryAddress && "A valid vesting address is required"}
+              {errors?.beneficiaryAddress &&
+                "A valid vesting address is required"}
             </span>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-3 ml-4 flex-shrink-0 rounded-md border border-transparent bg-tokenops-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-tokenops-primary700 focus:outline-none focus:ring-2 focus:ring-tokenops-primary500 focus:ring-offset-2 disabled:opacity-50"
-            >
+            <PrimaryButton
+            className="min-w-max ml-2"
+              type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="text-white h-4" />}
               Track your vesting
-            </button>
+            </PrimaryButton>
           </form>
           <div className="mt-10">
-            <h3 className="text-sm font-medium text-gray-500 text-left">Try one of these examples. Just copy it in the search box.</h3>
-            <ul role="list" className="mt-4 divide-y divide-gray-200 border-t border-b border-gray-200 text-left">
-              {exampleContracts.map(contract => (
-                <li key={contract.address} className="flex items-center justify-between space-x-3 py-2">
+            <h3 className="text-sm font-medium text-gray-500 text-left">
+              Try one of these examples. Just copy it in the search box.
+            </h3>
+            <ul
+              role="list"
+              className="mt-4 divide-y divide-gray-200 border-t border-b border-gray-200 text-left"
+            >
+              {exampleContracts.map((contract) => (
+                <li
+                  key={contract.address}
+                  className="flex items-center justify-between space-x-3 py-2"
+                >
                   <div className="flex min-w-0 flex-1 items-center space-x-3">
                     <div className="min-w-0 flex-1 min-h-[2rem] flex items-center">
-                      <p className="truncate text-sm text-gray-500">{contract.address}</p>
+                      <p className="truncate text-sm text-gray-500">
+                        {contract.address}
+                      </p>
                     </div>
                     <div className="flex-shrink-0">
                       {/* <button
@@ -135,23 +152,20 @@ export const NoPortfolioItems = () => {
   );
 };
 
-;
-
 const Portfolio = () => {
-  const hasHydrated = useHasHydrated()
-  const portfolioItemObject = usePortfolioItems()
-  Object.values(portfolioItemObject)
-  const { address: account } = useAccount()
+  const hasHydrated = useHasHydrated();
+  const portfolioItemObject = usePortfolioItems();
+  Object.values(portfolioItemObject);
+  const { address: account } = useAccount();
 
-  if (!hasHydrated) return <></>
-
+  if (!hasHydrated) return <></>;
 
   return (
     <>
       <NoPortfolioItems />
     </>
-  )
-}
+  );
+};
 
 const Home = () => {
   return (
