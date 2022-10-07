@@ -19,7 +19,7 @@ import { Input } from "@/components/Input";
 import Spinner from "@/components/Spinner";
 import { chainId, useAccount } from "wagmi";
 import { useRouter } from "next/router";
-import { NoPortfolioItems } from "./search";
+import { NoPortfolioItems } from "pages";
 
 const BENEFICIARY_ADDRESSES = [
   "0xF0068a27c323766B8DAF8720dF20a404Cf447727",
