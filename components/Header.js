@@ -1,7 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { Popover, Transition } from "@headlessui/react";
 
-import TokenOpsLogo from "../images/tokenops-logo.svg";
+import TokenOpsLogo from "../images/tokentable-logo.svg";
 import AccountButton from "./AccountButton";
 import Link from "next/link";
 import { SecondaryButton } from "./Button";
