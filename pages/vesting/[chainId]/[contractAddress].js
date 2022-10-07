@@ -412,25 +412,26 @@ export const Vesting = ({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center">
           <div className="flex gap-2 items-center">
-            <div className="flex justify-between w-full">
-              {vestingMetaData?.companyName && (
-                <h1 className="text-2xl font-semibold text-gray-800">
-                  {vestingMetaData?.companyName}
-                </h1>
-              )}
-              {vestingMetaData?.contractAddress && (
-                <h1 className="text-2xl font-semibold text-gray-800">
-                  <a
-                    href={contractLink}
-                    alt="Block Explorer Link"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {shortAddress(vestingMetaData?.contractAddress)}
-                  </a>
-                </h1>
-              )}
-            </div>
+            <a
+              href={contractLink}
+              alt="Block Explorer Link"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <div className="flex justify-between w-full">
+                {vestingMetaData?.companyName && (
+                  <h1 className="text-2xl font-semibold text-gray-800">
+                    {vestingMetaData?.companyName}
+                  </h1>
+                )}
+                {vestingMetaData?.contractAddress &&
+                  !vestingMetaData.companyName && (
+                    <h1 className="text-2xl font-semibold text-gray-800">
+                      {shortAddress(vestingMetaData?.contractAddress)}
+                    </h1>
+                  )}
+              </div>
+            </a>
             <BookmarkButton
               chainId={contractChainId}
               contractAddress={contractAddress}
