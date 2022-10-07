@@ -41,7 +41,7 @@ export default function Header() {
             </SecondaryButton> */}
           </div>
           <div className="flex flex-shrink-0 ml-4">
-            <ConnectButton showBalance={{smallScreen: false, largeScreen: false}} />
+            <ConnectButton showBalance={false} />
           </div>
         </div>
       </div>

@@ -1,18 +1,10 @@
 import '../styles/globals.css'
 import '@rainbow-me/rainbowkit/styles.css';
 
-import {
-  wallet,
-  RainbowKitProvider,
-  connectorsForWallets,
-} from '@rainbow-me/rainbowkit';
-import {
-  createClient,
-  WagmiConfig,
-} from 'wagmi';
-import { chains } from "@/lib/provider"
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { WagmiConfig } from 'wagmi';
 import { Toaster } from 'react-hot-toast';
-import { useAutoConnectSafe, wagmiClient } from '@/lib/wagmi';
+import { useAutoConnectSafe, wagmiClient, chains } from '@/lib/wagmi';
 
 const AutoConnectSafe = ({ children }) => {
   useAutoConnectSafe()
