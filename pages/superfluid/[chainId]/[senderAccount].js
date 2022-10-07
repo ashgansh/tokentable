@@ -1,24 +1,25 @@
-import { useRouter } from "next/router"
 import { useCallback, useEffect, useMemo, useState } from "react"
-
-import { formatAddress, classNames } from "@/lib/utils"
-
-import { LayoutWrapper } from "@/components/LayoutWrapper"
-import StreamsTable from "@/components/StreamsTable"
+import { useRouter } from "next/router"
 import { Framework } from "@superfluid-finance/sdk-core"
-import { getProvider } from "@/lib/provider"
-import { tokenStore } from "@/lib/tokens"
-import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
-import { Label, Input } from "@/components/Input"
 import { useAccount, useNetwork, useSigner } from "wagmi"
-import { PrimaryButton } from "@/components/Button"
 import { useController, useForm } from "react-hook-form"
 import { isAddress, parseEther } from "ethers/lib/utils"
-import Spinner from "@/components/Spinner"
-import toast from "react-hot-toast"
 import { Combobox } from "@headlessui/react"
-import { ChevronUpDownIcon, EnvelopeIcon } from "@heroicons/react/24/outline"
+import { ArrowsRightLeftIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline"
+import toast from "react-hot-toast"
 import axios from "axios"
+
+import { formatAddress, classNames, formatCurrency } from "@/lib/utils"
+import { tokenStore, useTokenPrice } from "@/lib/tokens"
+import { getProvider } from "@/lib/provider"
+
+import { LayoutWrapper } from "@/components/LayoutWrapper"
+import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
+import { Label, Input, CurrencyInput } from "@/components/Input"
+import { PrimaryButton } from "@/components/Button"
+import Spinner from "@/components/Spinner"
+import StreamsTable from "@/components/StreamsTable"
+
 
 const SUPERFLUID_ASSETS_BASE_PATH = "https://raw.githubusercontent.com/superfluid-finance/assets/master/public"
 const DEFAULT_TOKEN_ICON = "/icons/default-token.png"
@@ -85,7 +86,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
               />
             </div>
             <Combobox.Input
-              className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-12 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
               onChange={(event) => setQuery(event.target.value)}
               displayValue={(tokenAddress) => tokenDetails?.[tokenAddress]?.name}
             />
@@ -129,9 +130,41 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
 
 const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
   const [superTokens, setSuperTokens] = useState([])
-  const { handleSubmit, register, control, formState: { errors, isSubmitting } } = useForm()
+  const [selectedTokenBalance, setSelectedTokenBalance] = useState()
+  const { handleSubmit, register, control, watch, formState: { errors, isSubmitting } } = useForm()
   const { address: account } = useAccount()
   const { data: signer } = useSigner()
+  const addToken = tokenStore(state => state.addToken)
+
+  const monthlyFlowRate = watch("monthlyFlowRate")
+  const tokenAddress = watch("tokenAddress")
+
+  const tokenDetails = useMemo(() => superTokens.find(token => token.id === tokenAddress), [superTokens, tokenAddress])
+  const tokenPrice = useTokenPrice(chainId, tokenDetails?.underlyingAddress)
+
+  useEffect(() => {
+    if (!chainId) return
+    if (!tokenDetails) return
+    addToken(chainId, tokenDetails?.underlyingAddress)
+  }, [chainId, tokenDetails, addToken])
+
+  useEffect(() => {
+    setSelectedTokenBalance(null)
+
+    if (!chainId) return
+    if (!tokenAddress) return
+    if (!account) return
+
+    const retrieveBalance = async () => {
+      const provider = getProvider(chainId)
+      const superfluid = await Framework.create({ chainId, provider });
+      const token = await superfluid.loadSuperToken(tokenAddress)
+      const balance = await token.balanceOf({ account, providerOrSigner: provider })
+      setSelectedTokenBalance(balance)
+    }
+
+    retrieveBalance()
+  }, [chainId, tokenAddress, account])
 
   useEffect(() => {
     if (!chainId) return
@@ -149,6 +182,11 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
     retrieveSuperTokens()
   }, [chainId])
 
+  const getUSDValue = (amount) => {
+    if (!tokenPrice) return
+    if (!amount) return
+    return formatCurrency(tokenPrice * amount, 'USD')
+  }
 
   const handleAddStream = async ({ monthlyFlowRate, beneficiary, tokenAddress }) => {
     const flowRate = parseEther(monthlyFlowRate).div(30 * 24 * 60 * 60)
@@ -205,14 +243,7 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
               </span>
             </div>
             <div>
-              <Label>Tokens per month</Label>
-              <Input
-                type="number"
-                {...register("monthlyFlowRate", { required: true })}
-              />
-            </div>
-            <div>
-              <Label>Super Token Address</Label>
+              <Label>Super Token</Label>
               <TokenCombobox
                 type="text"
                 tokens={superTokens}
@@ -224,6 +255,21 @@ const AddStreamModal = ({ show, onClose, onSuccess, chainId }) => {
               <span className="text-xs text-red-400">
                 {errors?.tokenAddress?.type === "required" && "A valid address is required"}
                 {errors?.tokenAddress?.type === "isAddress" && "Invalid address"}
+              </span>
+            </div>
+            <div>
+              <Label>Tokens per month</Label>
+              <CurrencyInput
+                symbol={tokenDetails?.symbol}
+                placeholder="0.00"
+                {...register("monthlyFlowRate", { required: true, min: 0 })}
+              />
+              <span className={classNames(
+                "text-xs text-gray-500 flex gap-1 py-2",
+                (tokenPrice && monthlyFlowRate) ? "visible" : "invisible"
+              )}>
+                <ArrowsRightLeftIcon className="h-4 w-4" />
+                {getUSDValue(monthlyFlowRate)}
               </span>
             </div>
           </div>
