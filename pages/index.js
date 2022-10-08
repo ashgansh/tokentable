@@ -71,7 +71,7 @@ export const NoPortfolioItems = () => {
   return (
     <div className="mx-auto max-w-lg">
       <div className="text-center mb-2">
-        <QueueListIcon className="h-12 w-12 text-gray-300 mx-auto" />
+        <QueueListIcon className="h-12 w-12 text-tokenops-primary-500 mx-auto" />
         <h2 className="mt-2 text-lg font-medium text-gray-900">
           Track Vesting Schedules
         </h2>
