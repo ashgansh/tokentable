@@ -130,15 +130,15 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   };
 
   return (
-    <div className="min-w-max cursor-pointer" onClick={handleClickBookmark}>
+    <div className="min-w-max cursor-pointer text-tokenops-primary-500  " onClick={handleClickBookmark}>
       {!isBookmarked && (
         <>
-          <BookmarkIconOutline className="h-5 w-5 stroke-2" />
+          <BookmarkIconOutline className=" w-6 stroke-2" />
         </>
       )}
       {isBookmarked && (
         <>
-          <BookmarkIconSolid className="h-5 w-5 stroke-2" />
+          <BookmarkIconSolid className="w-6 stroke-2" />
         </>
       )}
     </div>
