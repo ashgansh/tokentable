@@ -338,6 +338,8 @@ const Superfluid = () => {
   }, [retrieveVestingData])
 
   useEffect(() => {
+    if (!senderAccount || contractChainId === NaN) return
+
     const listenToEvents = async () => {
       const provider = getProvider(contractChainId)
       const superfluid = await Framework.create({
