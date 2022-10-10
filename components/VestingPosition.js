@@ -110,7 +110,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
   }
 
   return (
-    <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6">
+    <div className="border border-gray-200 shadow rounded-lg px-4 py-4 px-6 bg-white">
       <div className="flex justify-between items-center">
         <div className="flex gap-4 items-center">
           <div className="flex flex-col">
