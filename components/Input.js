@@ -104,7 +104,7 @@ export const TokenAmountInput = forwardRef(function TokenAmountInput({ tokenSymb
       />
       {tokenPrice && (
         <span className="text-xs text-gray-500 flex gap-1 py-2">
-          <ArrowsRightLeftIcon onClick={handleConversionSwitch} className="h-4 w-4" />
+          <ArrowsRightLeftIcon onClick={handleConversionSwitch} className="h-4 w-4 hover:cursor-pointer" />
           {formatCurrency(otherValue, otherSymbol)}
         </span>
       )}
