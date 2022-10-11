@@ -9,13 +9,13 @@ import { ArrowsRightLeftIcon, ChevronUpDownIcon } from "@heroicons/react/24/outl
 import toast from "react-hot-toast"
 import axios from "axios"
 
-import { formatAddress, classNames, formatCurrency } from "@/lib/utils"
-import { tokenStore, useTokenPrice } from "@/lib/tokens"
+import { formatAddress, classNames, formatCurrency, formatAmount } from "@/lib/utils"
+import { tokenStore, useTokenDetails, useTokenPrice } from "@/lib/tokens"
 import { getProvider } from "@/lib/provider"
 
 import { LayoutWrapper } from "@/components/LayoutWrapper"
 import { Modal, ModalActionFooter, ModalBody, ModalTitle } from "@/components/Modal"
-import { Label, Input, CurrencyInput } from "@/components/Input"
+import { Label, Input, CurrencyInput, TokenAmountInput } from "@/components/Input"
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import StreamsTable from "@/components/StreamsTable"
@@ -136,7 +136,6 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
   const { data: signer } = useSigner()
   const addToken = tokenStore(state => state.addToken)
 
-  const monthlyFlowRate = watch("monthlyFlowRate")
   const tokenAddress = watch("tokenAddress")
 
   const tokenDetails = useMemo(() => superTokens.find(token => token.id === tokenAddress), [superTokens, tokenAddress])
@@ -258,6 +257,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
             </div>
             <div>
               <Label>Tokens per month</Label>
+              {/*
               <CurrencyInput
                 symbol={tokenDetails?.symbol}
                 placeholder="0.00"
@@ -270,6 +270,12 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
                 <ArrowsRightLeftIcon className="h-4 w-4" />
                 {getUSDValue(monthlyFlowRate)}
               </span>
+              */}
+              <TokenAmountInput
+                tokenSymbol={tokenDetails?.symbol}
+                tokenPrice={tokenPrice}
+                {...register("monthlyFlowRate", { required: true, min: 0 })}
+              />
             </div>
           </div>
         </ModalBody>
