@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint --ext .js --ignore-path .gitignore ."
+
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
