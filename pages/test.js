@@ -6,8 +6,8 @@ import { useController, useForm } from 'react-hook-form';
 import { isAddress, parseEther } from 'ethers/lib/utils';
 import { Combobox } from '@headlessui/react';
 import {
-  ArrowsRightLeftIcon,
-  ChevronUpDownIcon,
+    ArrowsRightLeftIcon,
+    ChevronUpDownIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -18,10 +18,10 @@ import { getProvider } from '@/lib/provider';
 
 import { LayoutWrapper } from '@/components/LayoutWrapper';
 import {
-  Modal,
-  ModalActionFooter,
-  ModalBody,
-  ModalTitle,
+    Modal,
+    ModalActionFooter,
+    ModalBody,
+    ModalTitle,
 } from '@/components/Modal';
 import { Label, Input, CurrencyInput } from '@/components/Input';
 import { PrimaryButton } from '@/components/Button';
@@ -30,66 +30,101 @@ import StreamsTable from '@/components/StreamsTable';
 import { GelatoOpsSDK } from '@gelatonetwork/ops-sdk';
 import { AddStreamModal } from './superfluid/[chainId]/[senderAccount]';
 import { useHasHydrated } from '@/lib/hooks';
-import { updateFlowPermissions } from '@/lib/superfluidHelpers';
-
-
-
-
+import {
+    getSuperTokenContract,
+    updateFlowPermissions,
+} from '@/lib/superfluid/helpers';
+import { ConstantFlowAgreementV1ABI } from '@/lib/superfluid/abi';
+import { Contract } from 'ethers';
 
 const CreateGelatoTaskButton = ({ chainId }) => {
-  const { data: signer } = useSigner();
+    const { data: signer } = useSigner();
+    const createGelatoTask = async () => {
+        const superTokenContract = await getSuperTokenContract(
+            'MATICx',
+            137,
+            signer
+        );
+        // Call Counter.increaseCount(42) every 10 minutes
+        const constantFlowAgreementContract = new Contract(
+            // proxy
+            // '0x6EeE6060f715257b970700bc2656De21dEdF074C',
+            // '0x31D5847E2b7c43b90Aee696519465a8d9F75E9EC',
+            '0x3E14dC1b13c488a8d5D310918780c983bD5982E7',
+            ConstantFlowAgreementV1ABI,
+            signer
+        );
+        const gelatoOps = new GelatoOpsSDK(chainId, signer);
 
-  const createGelatoTask = async () => {
-    // Call Counter.increaseCount(42) every 10 minutes
-    const gelatoOps = new GelatoOpsSDK(chainId, signer);
-    const { taskId, tx } = await gelatoOps.createTask({
-      execAddress: counter.address,
-      execSelector: counter.interface.getSighash('increaseCount(uint256)'),
-      execData: counter.interface.encodeFunctionData('increaseCount', [42]),
-      execAbi: counter.interface.format('json'),
-      startTime: 120,
-      name: 'Stop superfluid stream in 120 seconds',
-      dedicatedMsgSender: true,
-    });
-  };
-  const handleGelato = () => {
-    createGelatoTask();
-  };
-  return <button onClick={handleGelato}>create gelato task</button>;
+        // const fragment = iface.getFunction('balanceOf');
+        // iface.getSighash(fragment);
+        const { taskId, tx } = await gelatoOps.createTask({
+            execAddress: constantFlowAgreementContract.address,
+            // execSelector: constantFlowAgreementContract.interface.getSighash(
+            //     'deleteFlowByOperator(address, address, bytes)'
+            // ),
+            execSelector: constantFlowAgreementContract.interface.getSighash(
+                constantFlowAgreementContract.interface.getFunction(
+                    'deleteFlowByOperator'
+                )
+            ),
+            execData:
+                constantFlowAgreementContract.interface.encodeFunctionData(
+                    'deleteFlowByOperator',
+                    //sender, receiver, ctx
+                    [
+                        superTokenContract.address,
+                        '0x54a275FB2aC2391890c2E8471C39d85278C23cEe',
+                        '0x69F5Bd7021858C3270A43aD7D719c6164CA6D174',
+                        [],
+                    ]
+                ),
+            execAbi: constantFlowAgreementContract.interface.format('json'),
+            startTime: 120,
+            name: 'Stop superfluid stream in 120 seconds',
+            dedicatedMsgSender: true,
+        });
+    };
+    const handleGelato = () => {
+        createGelatoTask();
+    };
+    return <button onClick={handleGelato}>create gelato task</button>;
 };
 
 const UpdateSream = ({ chainId }) => {
-  const { data: signer } = useSigner();
-  const handleFlowPermissions = async () => {
-    const result = await updateFlowPermissions({
-      operator: '0x527a819db1eb0e34426297b03bae11F2f8B3A19E',
-      chainId,
-      permissionType: 4,
-      signer,
-      superTokenSymbol: 'MATICx',
-    });
-    console.log(result);
-  };
+    const { data: signer } = useSigner();
+    const handleFlowPermissions = async () => {
+        const result = await updateFlowPermissions({
+            // this is gelato OPSv1
+            operator: '0x527a819db1eb0e34426297b03bae11F2f8B3A19E',
+            chainId,
+            // delete permission
+            permissionType: 4,
+            signer,
+            superTokenSymbol: 'MATICx',
+        });
+        console.log(result);
+    };
 
-  return <button onClick={handleFlowPermissions}>update</button>;
+    return <button onClick={handleFlowPermissions}>update</button>;
 };
 
 const Test = () => {
-  const { isConnected } = useAccount();
-  const hasHydrated = useHasHydrated();
-  if (!hasHydrated) return <></>;
-  if (!isConnected) return <></>;
-  console.log('yo');
-  return (
-    <LayoutWrapper>
-      <div className="flex flex-col gap-3">
-        <AddStreamModal show chainId={137} onClose={() => null} />
-        <UpdateSream chainId={137} />
-        <CreateGelatoTaskButton chainId={137} />
-        {/* <DeleteSuperfluidStreamButton /> */}
-      </div>
-    </LayoutWrapper>
-  );
+    const { isConnected } = useAccount();
+    const hasHydrated = useHasHydrated();
+    if (!hasHydrated) return <></>;
+    if (!isConnected) return <></>;
+    console.log('yo');
+    return (
+        <LayoutWrapper>
+            <div className="flex flex-col gap-3">
+                {/* <AddStreamModal show chainId={137} onClose={() => null} /> */}
+                <UpdateSream chainId={137} />
+                <CreateGelatoTaskButton chainId={137} />
+                {/* <DeleteSuperfluidStreamButton /> */}
+            </div>
+        </LayoutWrapper>
+    );
 };
 
 export default Test;
