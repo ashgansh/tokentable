@@ -81,11 +81,11 @@ export const TokenAmountInput = forwardRef(function TokenAmountInput({ tokenSymb
     setInputValue(inputValue)
 
     if (isFiatInput) {
-      setTokenAmount(inputValue / tokenPrice)
-      setFiatAmount(inputValue)
+      setTokenAmount(formatAmount(inputValue / tokenPrice, {commify: false}))
+      setFiatAmount(formatAmount(inputValue, {commify: false}))
     } else {
-      setTokenAmount(inputValue)
-      setFiatAmount(inputValue * tokenPrice)
+      setTokenAmount(formatAmount(inputValue, {commify: false}))
+      setFiatAmount(formatAmount(inputValue * tokenPrice, {commify: false}))
     }
   }
 

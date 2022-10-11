@@ -18,6 +18,7 @@
     "@heroicons/react": "^2.0.10",
     "@rainbow-me/rainbowkit": "^0.5.1",
     "@superfluid-finance/sdk-core": "^0.5.6",
+    "add-to-calendar-button": "^1.17.0",
     "axios": "^0.27.2",
     "eslint-plugin-tailwindcss": "^3.6.2",
     "ethers": "^5.7.0",

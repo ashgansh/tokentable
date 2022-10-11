@@ -19,6 +19,9 @@ import { Label, Input, CurrencyInput, TokenAmountInput } from "@/components/Inpu
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import StreamsTable from "@/components/StreamsTable"
+import { atcb_action } from "add-to-calendar-button"
+
+import 'add-to-calendar-button/assets/css/atcb.css';
 
 
 const SUPERFLUID_ASSETS_BASE_PATH = "https://raw.githubusercontent.com/superfluid-finance/assets/master/public"
@@ -131,10 +134,18 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
 const AddStreamModal = ({ show, onClose, chainId }) => {
   const [superTokens, setSuperTokens] = useState([])
   const [selectedTokenBalance, setSelectedTokenBalance] = useState()
-  const { handleSubmit, register, control, watch, formState: { errors, isSubmitting } } = useForm()
   const { address: account } = useAccount()
   const { data: signer } = useSigner()
   const addToken = tokenStore(state => state.addToken)
+  const {
+    handleSubmit,
+    register,
+    control,
+    watch,
+    reset,
+    getValues,
+    formState: { errors, isSubmitting, isSubmitSuccessful }
+  } = useForm()
 
   const tokenAddress = watch("tokenAddress")
 
@@ -187,7 +198,13 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     return formatCurrency(tokenPrice * amount, 'USD')
   }
 
-  const handleAddStream = async ({ monthlyFlowRate, beneficiary, tokenAddress }) => {
+  const handleClose = async () => {
+    onClose()
+    await new Promise(resolve => setTimeout(resolve, 500))
+    reset()
+  }
+
+  const handleAddStream = async ({ monthlyFlowRate, beneficiary, tokenAddress, endDateTime }) => {
     const flowRate = parseEther(monthlyFlowRate).div(30 * 24 * 60 * 60)
     const provider = getProvider(chainId)
     const superfluid = await Framework.create({
@@ -207,7 +224,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
       toast.loading("Creating new stream...", { id: toastId })
       await txResponse.wait()
       toast.success("Success", { id: toastId })
-      onClose()
+      if (!endDateTime) handleClose()
     } catch (e) {
       console.error(e)
 
@@ -223,74 +240,103 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
       toast.error(message)
     }
   }
-  return (
-    <Modal show={show} onClose={onClose}>
-      <form onSubmit={handleSubmit(handleAddStream)}>
-        <ModalTitle>Add a vesting schedule</ModalTitle>
+
+  const CreateStreamForm = () => (
+    <form onSubmit={handleSubmit(handleAddStream)}>
+      <ModalTitle>Add a vesting schedule</ModalTitle>
+      <ModalBody>
+        <div className="flex flex-col gap-2.5">
+          <div>
+            <Label>Beneficiary Address</Label>
+            <Input
+              placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
+              {...register("beneficiary", { required: true, validate: { isAddress } })}
+            />
+            <span className="text-xs text-red-400">
+              {errors?.beneficiary?.type === "required" && "A valid address is required"}
+              {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
+            </span>
+          </div>
+          <div>
+            <Label>Super Token</Label>
+            <TokenCombobox
+              type="text"
+              tokens={superTokens}
+              chainId={chainId}
+              control={control}
+              rules={{ required: true }}
+              name="tokenAddress"
+            />
+            <span className="text-xs text-red-400">
+              {errors?.tokenAddress?.type === "required" && "A valid address is required"}
+              {errors?.tokenAddress?.type === "isAddress" && "Invalid address"}
+            </span>
+          </div>
+          <div>
+            <Label>Tokens per month</Label>
+            <TokenAmountInput
+              tokenSymbol={tokenDetails?.symbol}
+              tokenPrice={tokenPrice}
+              {...register("monthlyFlowRate", { required: true, min: 0 })}
+            />
+          </div>
+          <div>
+            <Label>End date reminder (optional)</Label>
+            <Input type="datetime-local" {...register("endDateTime")} />
+          </div>
+        </div>
+      </ModalBody>
+      <ModalActionFooter>
+        <div className="flex justify-between items-center w-full">
+          <PrimaryButton type="submit" disabled={isSubmitting}>
+            <span className="inline-flex items-center gap-1.5">
+              {isSubmitting && <Spinner className="h-4 w-4" />}
+              {isSubmitting && <span>Adding stream</span>}
+              {!isSubmitting && <span>Add stream</span>}
+            </span>
+          </PrimaryButton>
+        </div>
+      </ModalActionFooter>
+    </form>
+  )
+
+  const AddReminderToCalendar = () => {
+    const endDateTime = getValues("endDateTime")
+    const beneficiary = getValues("beneficiary")
+    const event = {
+      startDate: endDateTime,
+      endDate: endDateTime,
+      name: `Cancel stream to ${beneficiary}`,
+      options: ['Apple', 'Google', 'iCal', 'Microsoft365', 'Outlook.com', 'Yahoo'],
+      iCalFileName: "Reminder-Event",
+    }
+
+    const handleAddToCalendar = () => {
+      atcb_action(event)
+    }
+    return (
+      <>
+        <ModalTitle>Add reminder to calendar</ModalTitle>
         <ModalBody>
-          <div className="flex flex-col gap-2.5">
-            <div>
-              <Label>Beneficiary Address</Label>
-              <Input
-                placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
-                {...register("beneficiary", { required: true, validate: { isAddress } })}
-              />
-              <span className="text-xs text-red-400">
-                {errors?.beneficiary?.type === "required" && "A valid address is required"}
-                {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
-              </span>
-            </div>
-            <div>
-              <Label>Super Token</Label>
-              <TokenCombobox
-                type="text"
-                tokens={superTokens}
-                chainId={chainId}
-                control={control}
-                rules={{ required: true }}
-                name="tokenAddress"
-              />
-              <span className="text-xs text-red-400">
-                {errors?.tokenAddress?.type === "required" && "A valid address is required"}
-                {errors?.tokenAddress?.type === "isAddress" && "Invalid address"}
-              </span>
-            </div>
-            <div>
-              <Label>Tokens per month</Label>
-              {/*
-              <CurrencyInput
-                symbol={tokenDetails?.symbol}
-                placeholder="0.00"
-                {...register("monthlyFlowRate", { required: true, min: 0 })}
-              />
-              <span className={classNames(
-                "text-xs text-gray-500 flex gap-1 py-2",
-                (tokenPrice && monthlyFlowRate) ? "visible" : "invisible"
-              )}>
-                <ArrowsRightLeftIcon className="h-4 w-4" />
-                {getUSDValue(monthlyFlowRate)}
-              </span>
-              */}
-              <TokenAmountInput
-                tokenSymbol={tokenDetails?.symbol}
-                tokenPrice={tokenPrice}
-                {...register("monthlyFlowRate", { required: true, min: 0 })}
-              />
-            </div>
+          <div className="flex items-center justify-center">
+            <PrimaryButton onClick={handleAddToCalendar}>Add to calendar</PrimaryButton>
           </div>
         </ModalBody>
         <ModalActionFooter>
-          <div className="flex justify-between items-center w-full">
-            <PrimaryButton type="submit" disabled={isSubmitting}>
-              <span className="inline-flex items-center gap-1.5">
-                {isSubmitting && <Spinner className="h-4 w-4" />}
-                {isSubmitting && <span>Adding stream</span>}
-                {!isSubmitting && <span>Add stream</span>}
-              </span>
-            </PrimaryButton>
-          </div>
+          <PrimaryButton onClick={handleClose}>Close</PrimaryButton>
         </ModalActionFooter>
-      </form>
+      </>
+    )
+  }
+
+  return (
+    <Modal show={show} onClose={onClose}>
+      {!isSubmitSuccessful && (
+        <CreateStreamForm />
+      )}
+      {isSubmitSuccessful && (
+        <AddReminderToCalendar />
+      )}
     </Modal>
   )
 }
