@@ -38,27 +38,31 @@ import {
 import { ConstantFlowAgreementV1ABI } from '@/lib/superfluid/abi';
 import { Contract } from 'ethers';
 
-const CreateGelatoTaskButton = ({ chainId }) => {
+// proxy
+// '0x31D5847E2b7c43b90Aee696519465a8d9F75E9EC',
+// '0x3E14dC1b13c488a8d5D310918780c983bD5982E7',
+
+const CreateGelatoTaskButton = ({
+    chainId,
+    operator,
+    contractToAutomate,
+    sender,
+    recipient,
+}) => {
     const { data: signer } = useSigner();
     const createGelatoTask = async () => {
         const superTokenContract = await getSuperTokenContract(
             'MATICx',
-            137,
+            chainId,
             signer
         );
-        // Call Counter.increaseCount(42) every 10 minutes
         const constantFlowAgreementContract = new Contract(
-            // proxy
-            // '0x6EeE6060f715257b970700bc2656De21dEdF074C',
-            // '0x31D5847E2b7c43b90Aee696519465a8d9F75E9EC',
-            '0x3E14dC1b13c488a8d5D310918780c983bD5982E7',
+            contractToAutomate,
             ConstantFlowAgreementV1ABI,
             signer
         );
         const gelatoOps = new GelatoOpsSDK(chainId, signer);
 
-        // const fragment = iface.getFunction('balanceOf');
-        // iface.getSighash(fragment);
         const { taskId, tx } = await gelatoOps.createTask({
             execAddress: constantFlowAgreementContract.address,
             execSelector: constantFlowAgreementContract.interface.getSighash(
@@ -72,8 +76,8 @@ const CreateGelatoTaskButton = ({ chainId }) => {
                     //token, sender, receiver, ctx
                     [
                         superTokenContract.address,
-                        '0x54a275FB2aC2391890c2E8471C39d85278C23cEe',
-                        '0x69F5Bd7021858C3270A43aD7D719c6164CA6D174',
+                        sender,
+                        recipient,
                         [],
                     ]
                 ),
@@ -131,22 +135,34 @@ const Test = () => {
     const sender = '0x54a275FB2aC2391890c2E8471C39d85278C23cEe';
     // account 1
     const recipient = '0x69F5Bd7021858C3270A43aD7D719c6164CA6D174';
-    // account 3
-    const operator = '0x4ee04BfC70DAAA8969f86634Ce8956Cf4014A0CD';
+
+    const useGelato = true;
+    const operator = useGelato
+        ? // gelato contract
+          '0x527a819db1eb0e34426297b03bae11F2f8B3A19E'
+        : // account 3
+          '0x4ee04BfC70DAAA8969f86634Ce8956Cf4014A0CD';
+
+    const contractToAutomate = '0x6EeE6060f715257b970700bc2656De21dEdF074C';
     if (!hasHydrated) return <></>;
     if (!isConnected) return <></>;
     console.log('yo');
     return (
         <LayoutWrapper>
             <div className="flex flex-col gap-3">
-                {/* <AddStreamModal show chainId={137} onClose={() => null} /> */}
                 <UpdateSream chainId={137} operator={operator} />
                 <DeleteStream
                     chainId={137}
                     sender={sender}
                     recipient={recipient}
                 />
-                <CreateGelatoTaskButton chainId={137} />
+                <CreateGelatoTaskButton
+                    chainId={137}
+                    operator={operator}
+                    contractToAutomate={contractToAutomate}
+                    sender={sender}
+                    recipient={recipient}
+                />
                 {/* <DeleteSuperfluidStreamButton /> */}
             </div>
         </LayoutWrapper>
