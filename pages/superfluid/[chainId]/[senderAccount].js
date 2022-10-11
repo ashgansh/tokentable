@@ -384,26 +384,8 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
         </Modal>
     );
 };
-const SuperfluidRouter = () => {
-    const { query } = useRouter();
-    const {
-        senderAccount: senderAccountUnformatted,
-        chainId: contractChainIdString,
-    } = query;
 
-    const senderAccount = formatAddress(senderAccountUnformatted);
-    const contractChainId = Number(contractChainIdString);
-
-    return (
-        <Superfluid
-            senderAccount={senderAccount}
-            isLockedChain
-            chainId={contractChainId}
-        />
-    );
-};
-
-const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
+export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
     const [showAddStreamModal, setShowAddStreamModal] = useState(false);
     const [vestingData, setVestingData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -516,7 +498,7 @@ const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
     };
 
     return (
-        <LayoutWrapper>
+        <>
             <AddStreamModal
                 show={showAddStreamModal}
                 onClose={handleCloseAddStreamModal}
@@ -545,6 +527,26 @@ const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
                     }
                 />
             </div>
+        </>
+    );
+};
+const SuperfluidRouter = () => {
+    const { query } = useRouter();
+    const {
+        senderAccount: senderAccountUnformatted,
+        chainId: contractChainIdString,
+    } = query;
+
+    const senderAccount = formatAddress(senderAccountUnformatted);
+    const contractChainId = Number(contractChainIdString);
+
+    return (
+        <LayoutWrapper>
+            <Superfluid
+                senderAccount={senderAccount}
+                isLockedChain
+                chainId={contractChainId}
+            />
         </LayoutWrapper>
     );
 };
