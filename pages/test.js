@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { Framework } from '@superfluid-finance/sdk-core';
 import { useAccount, useNetwork, useSigner } from 'wagmi';
 import { useController, useForm } from 'react-hook-form';
-import { isAddress, parseEther } from 'ethers/lib/utils';
+import { Interface, isAddress, parseEther } from 'ethers/lib/utils';
 import { Combobox } from '@headlessui/react';
 import {
     ArrowsRightLeftIcon,
@@ -35,7 +35,7 @@ import {
     getSuperTokenContract,
     updateFlowPermissions,
 } from '@/lib/superfluid/helpers';
-import { ConstantFlowAgreementV1ABI } from '@/lib/superfluid/abi';
+import { ConstantFlowAgreementV1ABI, HostABI } from '@/lib/superfluid/abi';
 import { Contract } from 'ethers';
 
 // proxy
@@ -61,27 +61,41 @@ const CreateGelatoTaskButton = ({
             ConstantFlowAgreementV1ABI,
             signer
         );
+
+        const hostInterface = new Interface(HostABI)
         const gelatoOps = new GelatoOpsSDK(chainId, signer);
 
+        const callData = constantFlowAgreementContract.interface.encodeFunctionData(
+          'deleteFlowByOperator',
+          //token, sender, receiver, ctx
+          [
+              superTokenContract.address.toLowerCase(),
+              sender.toLowerCase(),
+              recipient.toLowerCase(),
+              []
+          ]
+        )
+
+        const CFAV1Adress = "0x6EeE6060f715257b970700bc2656De21dEdF074C"
+
         const { taskId, tx } = await gelatoOps.createTask({
-            execAddress: constantFlowAgreementContract.address,
+            execAddress: contractToAutomate,
             execSelector: constantFlowAgreementContract.interface.getSighash(
-                constantFlowAgreementContract.interface.getFunction(
-                    'deleteFlowByOperator'
+                hostInterface.getFunction(
+                    'callAgreement(address,bytes,bytes)'
                 )
             ),
             execData:
-                constantFlowAgreementContract.interface.encodeFunctionData(
-                    'deleteFlowByOperator',
+                hostInterface.encodeFunctionData(
+                    'callAgreement(address,bytes,bytes)',
                     //token, sender, receiver, ctx
                     [
-                        superTokenContract.address,
-                        sender,
-                        recipient,
-                        [],
+                        CFAV1Adress,
+                        callData,
+                        "0x"
                     ]
                 ),
-            execAbi: constantFlowAgreementContract.interface.format('json'),
+            execAbi: hostInterface.format('json'),
             startTime: 120,
             name: 'Stop superfluid stream in 120 seconds',
             dedicatedMsgSender: true,
@@ -143,7 +157,7 @@ const Test = () => {
         : // account 3
           '0x4ee04BfC70DAAA8969f86634Ce8956Cf4014A0CD';
 
-    const contractToAutomate = '0x6EeE6060f715257b970700bc2656De21dEdF074C';
+    const contractToAutomate = '0x3E14dC1b13c488a8d5D310918780c983bD5982E7';
     if (!hasHydrated) return <></>;
     if (!isConnected) return <></>;
     console.log('yo');
