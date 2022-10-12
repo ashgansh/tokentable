@@ -206,19 +206,19 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
   const addToken = tokenStore((state) => state.addToken);
 
   const tokenAddress = watch("tokenAddress");
-  const beneficiary = watch("beneficiary")
-  const endDateTime = watch("endDateTime")
+  const beneficiary = watch("beneficiary");
+  const endDateTime = watch("endDateTime");
 
   const isInFuture = (dateTime) => {
-    const now = Date.now()
-    const startTime = new Date(dateTime).getTime()
-    return now < startTime
-  }
+    const now = Date.now();
+    const startTime = new Date(dateTime).getTime();
+    return now < startTime;
+  };
 
   const canAddToCalendar = useMemo(
     () => isAddress(beneficiary) && isInFuture(endDateTime),
     [beneficiary, endDateTime]
-  )
+  );
 
   const tokenDetails = useMemo(
     () => superTokens.find((token) => token.id === tokenAddress),
@@ -274,7 +274,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
   const handleAddToCalendar = () => {
     const endDateTime = getValues("endDateTime");
     const beneficiary = getValues("beneficiary");
-    const description = `[url]${window.location}[/url]`
+    const description = `[url]${window.location}[/url]`;
     const event = {
       startDate: endDateTime,
       endDate: endDateTime,
@@ -387,7 +387,11 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
                 <Label>End date</Label>
                 <Input type="datetime-local" {...register("endDateTime")} />
               </div>
-              <SecondaryButton className="mb-1" onClick={handleAddToCalendar} disabled={!canAddToCalendar}>
+              <SecondaryButton
+                className="mb-1"
+                onClick={handleAddToCalendar}
+                disabled={!canAddToCalendar}
+              >
                 Add calendar reminder
               </SecondaryButton>
             </div>
