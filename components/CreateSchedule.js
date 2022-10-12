@@ -6,7 +6,7 @@ import { isAddress, parseUnits } from "ethers/lib/utils"
 import { Combobox } from '@headlessui/react'
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
 
-import { classNames, formatCurrency } from '@/lib/utils'
+import { classNames, formatCurrency, record } from '@/lib/utils'
 import { tokenStore, useMultipleTokenDetails, useTokenDetails, useTokenFormatter, useTokenPrice } from '@/lib/tokens'
 
 import { Modal, ModalActionFooter, ModalBody, ModalTitle } from '@/components/Modal'
@@ -198,6 +198,7 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
 
     if (!success) return
 
+    record("A vesting schedule was added")
     onClose()
     onSuccess()
     reset()

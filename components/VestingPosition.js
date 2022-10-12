@@ -5,7 +5,7 @@ import toast from "react-hot-toast"
 import Moment from "react-moment"
 
 import { useTokenDetails, useTokenFormatter, useTokenPrice } from "@/lib/tokens"
-import { classNames, formatCurrency } from "@/lib/utils"
+import { classNames, formatCurrency, record } from "@/lib/utils"
 import { PrimaryButton } from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import SwitchChainButton from "./SwitchChainButton"
@@ -90,6 +90,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
       toast.loading(`Claiming your tokens...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully claimed your tokens", { id: toastId })
+      record("Some vested amount was claimed")
       handleRefreshReleasableAmount()
     } catch (e) {
       console.error(e)

@@ -28,6 +28,7 @@ import {
   classNames,
   formatCurrency,
   shortAddress,
+  record,
 } from "@/lib/utils";
 
 import { CurrencyInput, Input, Label } from "@/components/Input";
@@ -126,6 +127,7 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   };
 
   const handleClickBookmark = () => {
+    record("The bookmark button was clicked")
     isBookmarked ? handleRemovePorfolioItem() : handleAddPortfolioItem();
   };
 
