@@ -24,7 +24,7 @@ export const CurrencyInput = forwardRef(function CurrencyInput(
   ref
 ) {
   return (
-    <div className="relative mt-1 rounded-md shadow-sm">
+    <div className="relative rounded-md shadow-sm">
       <Input
         type="number"
         className={classNames('pr-12', className)}
@@ -48,11 +48,7 @@ export const Label = ({ className, children, optional = false }) => (
     >
       {children}
     </label>
-    {optional && (
-      <span className="text-sm text-gray-500" >
-        Optional
-      </span>
-    )}
+    {optional && <span className="text-sm text-gray-500">Optional</span>}
   </div>
 );
 
@@ -124,15 +120,13 @@ export const TokenAmountInput = forwardRef(function TokenAmountInput(
         value={inputValue}
         placeholder="0.00"
       />
-      {tokenPrice && (
-        <span className="flex gap-1 py-2 text-xs text-gray-500">
-          <ArrowsRightLeftIcon
-            onClick={handleConversionSwitch}
-            className="h-4 w-4 hover:cursor-pointer"
-          />
-          {formatCurrency(otherValue, otherSymbol)}
-        </span>
-      )}
+      <span className="flex gap-1 py-2 text-xs text-gray-500">
+        <ArrowsRightLeftIcon
+          onClick={handleConversionSwitch}
+          className="text-tokensops-primary-500 h-4 w-4 hover:cursor-pointer"
+        />
+        {formatCurrency(otherValue, otherSymbol)}
+      </span>
     </>
   );
 });

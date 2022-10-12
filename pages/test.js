@@ -19,22 +19,15 @@ import {
   formatCurrency,
   shortAddress,
 } from "@/lib/utils";
-import { tokenStore, useTokenPrice } from "@/lib/tokens";
-import { getProvider } from "@/lib/provider";
 
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import {
   Modal,
-  ModalActionFooter,
   ModalBody,
   ModalTitle,
 } from "@/components/Modal";
-import { Label, Input, CurrencyInput } from "@/components/Input";
 import { PrimaryButton } from "@/components/Button";
-import Spinner from "@/components/Spinner";
-import StreamsTable from "@/components/StreamsTable";
 import { GelatoOpsSDK } from "@gelatonetwork/ops-sdk";
-import { AddStreamModal } from "./superfluid/[chainId]/[senderAccount]";
 import { useHasHydrated } from "@/lib/hooks";
 import {
   deleteFlowAsOperator,

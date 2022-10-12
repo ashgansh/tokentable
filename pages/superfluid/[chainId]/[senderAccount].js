@@ -27,6 +27,7 @@ import {
   Modal,
   ModalActionFooter,
   ModalBody,
+  ModalSubtitle,
   ModalTitle,
 } from "@/components/Modal";
 import { Label, Input, TokenAmountInput } from "@/components/Input";
@@ -154,7 +155,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
     <Combobox as="div" value={value} onChange={onChange}>
       {({ open }) => (
         <div className="relative">
-          <div className="relative mt-1 rounded-md shadow-sm">
+          <div className="relative rounded-md shadow-sm">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -172,6 +173,8 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
               onChange={(event) => setQuery(event.target.value)}
               displayValue={(tokenAddress) =>
                 tokenDetails?.[tokenAddress]?.name
+                  .replace("Super", "")
+                  .replace("Token", "")
               }
             />
             <span className="absolute inset-y-0 right-10 py-3 text-xs text-gray-500">
@@ -224,9 +227,7 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                           "block grow truncate",
                           selected && "font-semibold"
                         )}
-                      >
-                        {token.name}
-                      </span>
+                      ></span>
                       <span>
                         {token.balance &&
                           formatToken(
@@ -382,10 +383,13 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     <Modal show={show} onClose={onClose}>
       <form onSubmit={handleSubmit(handleAddStream)}>
         <ModalTitle>Add a vesting schedule</ModalTitle>
+        <ModalSubtitle>
+          Create a new vesting schedule powered by Superfluid
+        </ModalSubtitle>
         <ModalBody>
           <div className="flex flex-col gap-2.5">
             <div>
-              <Label>Beneficiary Address</Label>
+              <Label>Recipient</Label>
               <Input
                 placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
                 {...register("beneficiary", {
@@ -401,33 +405,34 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
                   "You cannot stream tokens to yourself"}
               </span>
             </div>
-            <div>
-              <Label>Super Token</Label>
-              <TokenCombobox
-                type="text"
-                tokens={superTokens}
-                chainId={chainId}
-                control={control}
-                rules={{ required: true }}
-                name="tokenAddress"
-              />
-              <span className="text-xs text-red-400">
-                {errors?.tokenAddress?.type === "required" &&
-                  "A valid address is required"}
-                {errors?.tokenAddress?.type === "isAddress" &&
-                  "Invalid address"}
-              </span>
-            </div>
-            <div className="">
-              <Label>Tokens per month</Label>
-              <TokenAmountInput
-                tokenSymbol={tokenDetails?.symbol}
-                tokenPrice={tokenPrice}
-                {...register("monthlyFlowRate", {
-                  required: true,
-                  min: 0,
-                })}
-              />
+            <div className="flex justify-between">
+              <div>
+                <Label>Select Currency</Label>
+                <TokenCombobox
+                  type="text"
+                  tokens={superTokens}
+                  chainId={chainId}
+                  control={control}
+                  rules={{ required: true }}
+                  name="tokenAddress"
+                />
+                <span className="text-xs text-red-400">
+                  {errors?.tokenAddress?.type === "required" &&
+                    "A valid address is required"}
+                  {errors?.tokenAddress?.type === "isAddress" &&
+                    "Invalid address"}
+                </span>
+              </div>
+              <div className="">
+                <Label>Tokens per month</Label>
+                <TokenAmountInput
+                  tokenPrice={tokenPrice}
+                  {...register("monthlyFlowRate", {
+                    required: true,
+                    min: 0,
+                  })}
+                />
+              </div>
             </div>
             <div className="flex items-end justify-between gap-2.5">
               <div className="grow">
