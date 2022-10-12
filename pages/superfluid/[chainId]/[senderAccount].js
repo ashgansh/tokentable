@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { Framework } from "@superfluid-finance/sdk-core";
-import { chain, chainId, useAccount, useNetwork, useSigner } from "wagmi";
+import { useAccount, useNetwork, useSigner } from "wagmi";
 import { useController, useForm } from "react-hook-form";
 import { isAddress, parseEther } from "ethers/lib/utils";
 import { Combobox } from "@headlessui/react";
 import {
-  ArrowsRightLeftIcon,
   ChevronUpDownIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
@@ -15,10 +14,9 @@ import axios from "axios";
 import {
   formatAddress,
   classNames,
-  formatCurrency,
-  formatAmount,
+  formatToken,
 } from "@/lib/utils";
-import { tokenStore, useTokenDetails, useTokenPrice } from "@/lib/tokens";
+import { tokenStore, useTokenPrice } from "@/lib/tokens";
 import { getProvider } from "@/lib/provider";
 
 import { LayoutWrapper } from "@/components/LayoutWrapper";
@@ -31,7 +29,6 @@ import {
 import {
   Label,
   Input,
-  CurrencyInput,
   TokenAmountInput,
 } from "@/components/Input";
 import { PrimaryButton, SecondaryButton } from "@/components/Button";
@@ -40,6 +37,7 @@ import StreamsTable from "@/components/StreamsTable";
 import { atcb_action } from "add-to-calendar-button";
 
 import "add-to-calendar-button/assets/css/atcb.css";
+import { BigNumber } from "ethers";
 
 const SUPERFLUID_ASSETS_BASE_PATH =
   "https://raw.githubusercontent.com/superfluid-finance/assets/master/public";
@@ -62,8 +60,10 @@ const VestingDashboard = ({ vestingData, isLoading, onCancelStream }) => {
 };
 
 const TokenCombobox = ({ chainId, tokens, ...args }) => {
+  const { address: account } = useAccount();
   const [query, setQuery] = useState("");
   const [tokenIcons, setTokenIcons] = useState([]);
+  const [tokenBalances, setTokenTokenBalances] = useState([]);
   const {
     field: { value, onChange },
   } = useController(args);
@@ -73,12 +73,19 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
       const tokenIcon = tokenIcons.find(
         (tokenIcon) => tokenIcon.id === token.id
       );
+      const tokenBalance = tokenBalances.find(
+        (tokenBalance) => tokenBalance.id === token.id
+      );
       return {
         ...tokenDetails,
-        [token.id]: { ...token, iconUrl: tokenIcon?.iconUrl },
+        [token.id]: {
+          ...token,
+          iconUrl: tokenIcon?.iconUrl,
+          balance: tokenBalance?.balance,
+        },
       };
     }, {});
-  }, [tokens, tokenIcons]);
+  }, [tokens, tokenIcons, tokenBalances]);
 
   useEffect(() => {
     const retreiveTokenManifests = async () => {
@@ -100,6 +107,31 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
     retreiveTokenManifests();
   }, [tokens]);
 
+  useEffect(() => {
+    if (!chainId) return;
+    if (!account) return;
+    const retrieveTokenBalances = async () => {
+      const provider = getProvider(chainId);
+      const superfluid = await Framework.create({ chainId, provider });
+      const tokenBalances = await Promise.all(
+        tokens.map(async ({ id: tokenAddress }) => {
+          try {
+            const token = await superfluid.loadSuperToken(tokenAddress);
+            const balance = await token.balanceOf({
+              account,
+              providerOrSigner: provider,
+            });
+            return { id: tokenAddress, balance: BigNumber.from(balance) };
+          } catch (_) {
+            return { id: tokenAddress, balance: null };
+          }
+        })
+      );
+      setTokenTokenBalances(tokenBalances);
+    };
+    retrieveTokenBalances();
+  }, [tokens, chainId, account]);
+
   const filteredTokens =
     query === ""
       ? tokens
@@ -109,9 +141,10 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
             token.symbol.toLowerCase().includes(query.toLowerCase())
         );
 
-  const selectedValueIconURL =
-    tokenDetails?.[value]?.iconUrl &&
-    `${SUPERFLUID_ASSETS_BASE_PATH}${tokenDetails?.[value]?.iconUrl}`;
+  const selectedToken = tokenDetails?.[value];
+  const selectedTokenIconURL =
+    selectedToken?.iconUrl &&
+    `${SUPERFLUID_ASSETS_BASE_PATH}${selectedToken?.iconUrl}`;
 
   return (
     <Combobox as="div" value={value} onChange={onChange}>
@@ -122,8 +155,8 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={
-                  !open && value && selectedValueIconURL
-                    ? selectedValueIconURL
+                  !open && selectedToken && selectedTokenIconURL
+                    ? selectedTokenIconURL
                     : DEFAULT_TOKEN_ICON
                 }
                 className="h-6 w-6"
@@ -137,6 +170,12 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                 tokenDetails?.[tokenAddress]?.name
               }
             />
+            <span className="absolute inset-y-0 py-3 right-10 text-xs text-gray-500">
+              {!open && selectedToken && selectedToken.balance &&
+                formatToken(selectedToken.balance, selectedToken.decimals, selectedToken.symbol, {
+                  symbol: "prepend",
+                })}
+            </span>
           </div>
           <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
             <ChevronUpDownIcon
@@ -171,11 +210,20 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                       />
                       <span
                         className={classNames(
-                          "block truncate",
+                          "block grow truncate",
                           selected && "font-semibold"
                         )}
                       >
                         {token.name}
+                      </span>
+                      <span>
+                        {token.balance &&
+                          formatToken(
+                            token.balance,
+                            token.decimals,
+                            token.symbol,
+                            { symbol: "prepend" }
+                          )}
                       </span>
                     </div>
                   )}
