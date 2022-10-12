@@ -1247,6 +1247,13 @@ acorn@^8.8.0:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.8.0.tgz#88c0187620435c7f6015803f5539dae05a9dbea8"
   integrity sha512-QOxyigPVrpZ2GXT+PFyZTl6TtOFc5egxHIP9IlQ+RbupQuX4RkT/Bee4/kQuC02Xkzg84JcT7oLYtDIQxp+v7w==
 
+add-to-calendar-button@^1.17.0:
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/add-to-calendar-button/-/add-to-calendar-button-1.17.0.tgz#547e071c29236b7bd09a737731e805081b6899ce"
+  integrity sha512-x5Gxn1sg4NS4woVqQ1cDtmb3cVMsr8eZUj3ZpMaJN2T0B5PTHSuuP29TqkwJlJ8/Dv47/rkr+I5+KGLMQcd/tg==
+  dependencies:
+    timezones-ical-library "^1.3.2"
+
 aes-js@3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/aes-js/-/aes-js-3.0.0.tgz#e21df10ad6c2053295bcbb8dab40b09dbea87e4d"
@@ -5077,6 +5084,11 @@ timers-browserify@^1.0.1:
   integrity sha512-PIxwAupJZiYU4JmVZYwXp9FKsHMXb5h0ZEFyuXTAn8WLHOlcij+FEcbrvDsom1o5dr1YggEtFbECvGCW2sT53Q==
   dependencies:
     process "~0.11.0"
+
+timezones-ical-library@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/timezones-ical-library/-/timezones-ical-library-1.3.2.tgz#d324145b03bbd592b344e1bbf2e66ffba3d30731"
+  integrity sha512-hTFg5pYqe7wssfQVGWJH447UJuDhSQCIBrRYzq+05UfA/51LIP5mnB4gGk+ALDCf1Lc3v4AzMFhgq+owOU5KMQ==
 
 to-fast-properties@^2.0.0:
   version "2.0.0"
