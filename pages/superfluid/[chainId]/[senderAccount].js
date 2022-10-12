@@ -246,14 +246,12 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
 
 const AddStreamModal = ({ show, onClose, chainId }) => {
   const [superTokens, setSuperTokens] = useState([]);
-  const [selectedTokenBalance, setSelectedTokenBalance] = useState();
   const {
     handleSubmit,
     register,
     control,
     watch,
     getValues,
-    getFieldState,
     formState: { errors, isSubmitting },
   } = useForm();
   const { address: account } = useAccount();
@@ -286,27 +284,6 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     if (!tokenDetails) return;
     addToken(chainId, tokenDetails?.underlyingAddress);
   }, [chainId, tokenDetails, addToken]);
-
-  useEffect(() => {
-    setSelectedTokenBalance(null);
-
-    if (!chainId) return;
-    if (!tokenAddress) return;
-    if (!account) return;
-
-    const retrieveBalance = async () => {
-      const provider = getProvider(chainId);
-      const superfluid = await Framework.create({ chainId, provider });
-      const token = await superfluid.loadSuperToken(tokenAddress);
-      const balance = await token.balanceOf({
-        account,
-        providerOrSigner: provider,
-      });
-      setSelectedTokenBalance(balance);
-    };
-
-    retrieveBalance();
-  }, [chainId, tokenAddress, account]);
 
   useEffect(() => {
     if (!chainId) return;
