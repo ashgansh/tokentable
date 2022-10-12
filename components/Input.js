@@ -1,6 +1,7 @@
 import { classNames, formatAmount, formatCurrency } from '@/lib/utils';
 import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { forwardRef, useCallback, useEffect, useState } from 'react';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 export const Input = forwardRef(function Input(
   { className, type = 'text', ...args },
@@ -130,3 +131,36 @@ export const TokenAmountInput = forwardRef(function TokenAmountInput(
     </>
   );
 });
+
+// export const Input = forwardRef(function Input(
+//   { className, type = 'text', ...args },
+//   ref
+// ) {
+//   return (
+//     <input
+//       type={type}
+//       className={classNames(
+//         'block w-full rounded-md border-gray-300 shadow-sm sm:text-sm',
+//         className
+//       )}
+//       ref={ref}
+//       {...args}
+//     />
+//   );
+// });
+
+export const DatePicker = () =>
+  forwardRef(function DatePicker({ className, type, ...args }, ref) {
+    return (
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DatePicker
+          label="Basic example"
+          value={value}
+          onChange={(newValue) => {
+            setValue(newValue);
+          }}
+          renderInput={(params) => <TextField {...params} />}
+        />
+      </LocalizationProvider>
+    );
+  });
