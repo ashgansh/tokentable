@@ -4,6 +4,7 @@ import {
   BoltIcon,
   ClipboardIcon,
   LinkIcon,
+  PlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
@@ -14,6 +15,7 @@ import { BigNumber } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import { PrimaryButton, SecondaryButton } from './Button';
 import { GelatoAutomationModal } from 'pages/test';
+import EmptyVestingState from './EmptyVestingSate';
 
 const SECONDS_IN_MONTH = 30 * 24 * 60 * 60;
 
@@ -228,6 +230,14 @@ const VestingTable = ({ streams, chainId, isLoading, onCancelStream }) => {
               {isLoading && <LoadingGrantRow />}
             </tbody>
           </table>
+          {streams.length === 0 && (
+            <EmptyVestingState className="bg-white py-4">
+              {/* <PrimaryButton>
+                <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                New vesting
+              </PrimaryButton> */}
+            </EmptyVestingState>
+          )}
         </div>
       </div>
     </div>

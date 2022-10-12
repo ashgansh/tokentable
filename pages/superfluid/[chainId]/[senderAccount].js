@@ -51,7 +51,7 @@ const VestingDashboard = ({ vestingData, isLoading, onCancelStream }) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       <div>
-        <h2 className="py-2 text-lg">Streams</h2>
+        <h2 className="py-2 text-lg">Vestings</h2>
         <StreamsTable
           streams={vestingData?.streams || []}
           chainId={vestingData?.chainId}
@@ -582,7 +582,7 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
           <div className="flex gap-2">
             {canAddStream && isConnectedWithCorrectChain && (
               <PrimaryButton onClick={handleOpenAddStreamModal}>
-                <CalendarDaysIcon className="mr-1 h-5 w-5" /> Add Schedule
+                <CalendarDaysIcon className="mr-1 h-5 w-5" /> Add Vesting
               </PrimaryButton>
             )}
           </div>
