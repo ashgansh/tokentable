@@ -7,6 +7,7 @@ import { isAddress, parseEther } from "ethers/lib/utils";
 import { Combobox } from "@headlessui/react";
 import {
   ChevronUpDownIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -15,9 +16,10 @@ import {
   formatAddress,
   classNames,
   formatToken,
+  shortAddress,
 } from "@/lib/utils";
 import { tokenStore, useTokenPrice } from "@/lib/tokens";
-import { getProvider } from "@/lib/provider";
+import { getAddressBlockExplorerLink, getProvider } from "@/lib/provider";
 
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import {
@@ -37,11 +39,16 @@ import StreamsTable from "@/components/StreamsTable";
 import { atcb_action } from "add-to-calendar-button";
 
 import "add-to-calendar-button/assets/css/atcb.css";
+import Banner from "@/components/Alert";
+import { TableTitle } from "pages/vesting/[chainId]/[contractAddress]";
 import { BigNumber } from "ethers";
 
 const SUPERFLUID_ASSETS_BASE_PATH =
   "https://raw.githubusercontent.com/superfluid-finance/assets/master/public";
 const DEFAULT_TOKEN_ICON = "/icons/default-token.png";
+
+export const SUPERFLUID_WRAP_URL =
+  "https://app.superfluid.finance/wrap?upgrade";
 
 const VestingDashboard = ({ vestingData, isLoading, onCancelStream }) => {
   return (
@@ -254,12 +261,12 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
   const addToken = tokenStore((state) => state.addToken);
 
   const tokenAddress = watch("tokenAddress");
-  const beneficiary = watch("beneficiary");
+  const beneficiary = watch("beneficiary");;
   const endDateTime = watch("endDateTime");
 
   const isInFuture = (dateTime) => {
     const now = Date.now();
-    const startTime = new Date(dateTime).getTime();
+    const startTime = new Date(dateTime).getTime();;
     return now < startTime;
   };
 
@@ -346,7 +353,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     beneficiary,
     tokenAddress,
   }) => {
-    const flowRate = parseEther(monthlyFlowRate).div(30 * 24 * 60 * 60);
+    const flowRate = parseEther(monthlyFlowRate.toString()).div(30 * 24 * 60 * 60);
     const provider = getProvider(chainId);
     const superfluid = await Framework.create({
       chainId,
@@ -432,7 +439,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
             </div>
             <div className="flex items-end justify-between gap-2.5">
               <div className="grow">
-                <Label>End date</Label>
+                <Label optional>Set a reminder to end this stream</Label>
                 <Input type="datetime-local" {...register("endDateTime")} />
               </div>
               <SecondaryButton
@@ -440,7 +447,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
                 onClick={handleAddToCalendar}
                 disabled={!canAddToCalendar}
               >
-                Add calendar reminder
+                Add to calendar
               </SecondaryButton>
             </div>
           </div>
@@ -473,6 +480,8 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
 
   const contractChainId = chainId;
   const currentChainId = chain?.id;
+  // used to display h1s
+  const senderStreamLink = `https://console.superfluid.finance/matic/accounts/${senderAccount}?tab=streams`;
 
   const canAddStream = account === senderAccount;
   const canCancelStream = account === senderAccount;
@@ -573,7 +582,9 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-gray-800">{senderAccount}</h1>
+          <a href={senderStreamLink}>
+            <TableTitle>{shortAddress(senderAccount)}</TableTitle>
+          </a>
           <div className="flex gap-2">
             {canAddStream && isConnectedWithCorrectChain && (
               <PrimaryButton onClick={handleOpenAddStreamModal}>

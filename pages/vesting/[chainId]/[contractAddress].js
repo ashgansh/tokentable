@@ -61,7 +61,7 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
   return (
     <div className="flex flex-col gap-4 py-4">
       <div>
-        <h2 className="text-lg py-2">Vesting overview</h2>
+        <h2 className="py-2 text-lg">Vesting overview</h2>
         {Object.keys(vestingData?.tokens || { dummyToken: "ok" }).map(
           (tokenAddress) => (
             <VestingInsights
@@ -101,7 +101,7 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
         </div>
       )}
       <div>
-        <h2 className="text-lg py-2">Stakeholders</h2>
+        <h2 className="py-2 text-lg">Stakeholders</h2>
         <VestingTable
           grants={vestingData?.grants || []}
           chainId={vestingData?.chainId}
@@ -130,7 +130,10 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   };
 
   return (
-    <div className="min-w-max cursor-pointer text-tokenops-primary-500  " onClick={handleClickBookmark}>
+    <div
+      className="min-w-max cursor-pointer text-tokenops-primary-500  "
+      onClick={handleClickBookmark}
+    >
       {!isBookmarked && (
         <>
           <BookmarkIconOutline className=" w-6 stroke-2" />
@@ -186,6 +189,10 @@ const ConnectCTA = ({ hasGrants }) => {
       </div>
     </div>
   );
+};
+
+export const TableTitle = ({ children }) => {
+  return <h1 className="text-2xl font-semibold text-gray-800">{children}</h1>;
 };
 
 const AddFundsModal = ({
@@ -288,7 +295,7 @@ const AddFundsModal = ({
                 })}
               />
               {tokenPrice && amount && (
-                <span className="text-xs text-gray-500 flex gap-1 py-2">
+                <span className="flex gap-1 py-2 text-xs text-gray-500">
                   <ArrowsRightLeftIcon className="h-4 w-4" />
                   {getUSDValue(amount)}
                 </span>
@@ -304,7 +311,7 @@ const AddFundsModal = ({
           </div>
         </ModalBody>
         <ModalActionFooter>
-          <div className="flex justify-between items-center w-full">
+          <div className="flex w-full items-center justify-between">
             <PrimaryButton type="submit" disabled={isSubmitting}>
               <span className="inline-flex items-center gap-1.5">
                 {isSubmitting && <Spinner className="h-4 w-4" />}
@@ -410,25 +417,23 @@ export const Vesting = ({
           />
         )}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2 items-center">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <a
               href={contractLink}
               alt="Block Explorer Link"
               target="_blank"
               rel="noreferrer"
             >
-              <div className="flex justify-between w-full">
+              <div className="flex w-full justify-between">
                 {vestingMetaData?.companyName && (
-                  <h1 className="text-2xl font-semibold text-gray-800">
-                    {vestingMetaData?.companyName}
-                  </h1>
+                  <TableTitle>{vestingMetaData?.companyName}</TableTitle>
                 )}
                 {vestingMetaData?.contractAddress &&
                   !vestingMetaData.companyName && (
-                    <h1 className="text-2xl font-semibold text-gray-800">
+                    <TableTitle>
                       {shortAddress(vestingMetaData?.contractAddress)}
-                    </h1>
+                    </TableTitle>
                   )}
               </div>
             </a>
@@ -440,12 +445,12 @@ export const Vesting = ({
           <div className="flex gap-2">
             {canAddFunds && isConnectedWithCorrectChain && (
               <SecondaryButton onClick={handleOpenAddFundsModal}>
-                <PlusIcon className="h-5 w-5 mr-1"></PlusIcon> Add Funds
+                <PlusIcon className="mr-1 h-5 w-5"></PlusIcon> Add Funds
               </SecondaryButton>
             )}
             {canAddSchedule && isConnectedWithCorrectChain && (
               <PrimaryButton onClick={handleOpenAddScheduleModal}>
-                <CalendarDaysIcon className="h-5 w-5 mr-1" /> Add Schedule
+                <CalendarDaysIcon className="mr-1 h-5 w-5" /> Add Schedule
               </PrimaryButton>
             )}
             {(canAddSchedule || canAddFunds) &&

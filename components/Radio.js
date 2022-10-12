@@ -1,27 +1,27 @@
-import { useState } from "react";
-import { RadioGroup } from "@headlessui/react";
-import { CheckCircleIcon } from "@heroicons/react/20/solid";
-import Alert from "./Alert";
+import { useState } from 'react';
+import { RadioGroup } from '@headlessui/react';
+import { CheckCircleIcon } from '@heroicons/react/20/solid';
+import Alert, { SmartContractAudit } from './Alert';
 
 const mailingLists = [
   {
     id: 1,
-    title: "Sablier",
+    title: 'Sablier',
     description:
-      "Create your vesting contract on sablier. Sablier secures $55M+ of assets.",
+      'Create your vesting contract on sablier. Sablier secures $55M+ of assets.',
   },
   {
     id: 2,
-    title: "Superfluid",
+    title: 'Superfluid',
     description:
-      "Create your vesting contract on Superfluid. Superfluid is trusted by organisations everywhere to create realtime payments. ",
+      'Create your vesting contract on Superfluid. Superfluid is trusted by organisations everywhere to create realtime payments. ',
   },
   {
     id: 3,
-    title: "TokenOps",
+    title: 'TokenOps',
     description: (
       <div>
-        <Alert />
+        <SmartContractAudit />
         Get all the power of TokenOps at your disposal. Use advanced
         functionalities such post-vesting lockups, or deploy on any evm-based
         chain. (coming soon)
@@ -31,7 +31,7 @@ const mailingLists = [
 ];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 export default function Radio() {
@@ -50,11 +50,11 @@ export default function Radio() {
             value={mailingList}
             className={({ checked, active }) =>
               classNames(
-                checked ? "border-transparent" : "border-gray-300",
+                checked ? 'border-transparent' : 'border-gray-300',
                 active
-                  ? "border-tokenops-primary-600 ring-2 ring-tokenops-primary-600"
-                  : "",
-                "relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
+                  ? 'border-tokenops-primary-600 ring-2 ring-tokenops-primary-600'
+                  : '',
+                'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none'
               )
             }
           >
@@ -78,18 +78,18 @@ export default function Radio() {
                 </span>
                 <CheckCircleIcon
                   className={classNames(
-                    !checked ? "invisible" : "",
-                    "h-5 w-5 text-tokenops-primary-600"
+                    !checked ? 'invisible' : '',
+                    'h-5 w-5 text-tokenops-primary-600'
                   )}
                   aria-hidden="true"
                 />
                 <span
                   className={classNames(
-                    active ? "border" : "border-2",
+                    active ? 'border' : 'border-2',
                     checked
-                      ? "border-tokenops-primary-600"
-                      : "border-transparent",
-                    "pointer-events-none absolute -inset-px rounded-lg"
+                      ? 'border-tokenops-primary-600'
+                      : 'border-transparent',
+                    'pointer-events-none absolute -inset-px rounded-lg'
                   )}
                   aria-hidden="true"
                 />
