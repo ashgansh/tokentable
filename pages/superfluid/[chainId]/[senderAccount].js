@@ -5,10 +5,7 @@ import { useAccount, useNetwork, useSigner } from "wagmi";
 import { useController, useForm } from "react-hook-form";
 import { isAddress, parseEther } from "ethers/lib/utils";
 import { Combobox } from "@headlessui/react";
-import {
-  ChevronUpDownIcon,
-  LinkIcon,
-} from "@heroicons/react/24/outline";
+import { CalendarDaysIcon, ChevronUpDownIcon, LinkIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -28,11 +25,7 @@ import {
   ModalBody,
   ModalTitle,
 } from "@/components/Modal";
-import {
-  Label,
-  Input,
-  TokenAmountInput,
-} from "@/components/Input";
+import { Label, Input, TokenAmountInput } from "@/components/Input";
 import { PrimaryButton, SecondaryButton } from "@/components/Button";
 import Spinner from "@/components/Spinner";
 import StreamsTable from "@/components/StreamsTable";
@@ -177,11 +170,18 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                 tokenDetails?.[tokenAddress]?.name
               }
             />
-            <span className="absolute inset-y-0 py-3 right-10 text-xs text-gray-500">
-              {!open && selectedToken && selectedToken.balance &&
-                formatToken(selectedToken.balance, selectedToken.decimals, selectedToken.symbol, {
-                  symbol: "prepend",
-                })}
+            <span className="absolute inset-y-0 right-10 py-3 text-xs text-gray-500">
+              {!open &&
+                selectedToken &&
+                selectedToken.balance &&
+                formatToken(
+                  selectedToken.balance,
+                  selectedToken.decimals,
+                  selectedToken.symbol,
+                  {
+                    symbol: "prepend",
+                  }
+                )}
             </span>
           </div>
           <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
@@ -261,12 +261,12 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
   const addToken = tokenStore((state) => state.addToken);
 
   const tokenAddress = watch("tokenAddress");
-  const beneficiary = watch("beneficiary");;
+  const beneficiary = watch("beneficiary");
   const endDateTime = watch("endDateTime");
 
   const isInFuture = (dateTime) => {
     const now = Date.now();
-    const startTime = new Date(dateTime).getTime();;
+    const startTime = new Date(dateTime).getTime();
     return now < startTime;
   };
 
@@ -353,7 +353,9 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     beneficiary,
     tokenAddress,
   }) => {
-    const flowRate = parseEther(monthlyFlowRate.toString()).div(30 * 24 * 60 * 60);
+    const flowRate = parseEther(monthlyFlowRate.toString()).div(
+      30 * 24 * 60 * 60
+    );
     const provider = getProvider(chainId);
     const superfluid = await Framework.create({
       chainId,
@@ -456,8 +458,8 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
           <PrimaryButton type="submit" disabled={isSubmitting} className="mb-1">
             <span className="inline-flex items-center gap-1.5">
               {isSubmitting && <Spinner className="h-4 w-4" />}
-              {isSubmitting && <span>Adding stream</span>}
-              {!isSubmitting && <span>Add stream</span>}
+              {isSubmitting && <span>Adding schedule</span>}
+              {!isSubmitting && <span>Add schedule</span>}
             </span>
           </PrimaryButton>
         </ModalActionFooter>
@@ -588,7 +590,7 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
           <div className="flex gap-2">
             {canAddStream && isConnectedWithCorrectChain && (
               <PrimaryButton onClick={handleOpenAddStreamModal}>
-                Add Stream
+                <CalendarDaysIcon className="mr-1 h-5 w-5" /> Add Schedule
               </PrimaryButton>
             )}
           </div>

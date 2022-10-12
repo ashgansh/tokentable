@@ -55,6 +55,7 @@ const CreateGelatoTaskButton = ({
   sender,
   recipient,
   superTokenSymbol,
+  onSuccess,
 }) => {
   const { data: signer } = useSigner();
   const createGelatoTask = async () => {
@@ -85,27 +86,34 @@ const CreateGelatoTaskButton = ({
 
     const CFAV1Adress = "0x6EeE6060f715257b970700bc2656De21dEdF074C";
 
-    const { taskId, tx } = await gelatoOps.createTask({
-      execAddress: contractToAutomate,
-      execSelector: constantFlowAgreementContract.interface.getSighash(
-        hostInterface.getFunction("callAgreement(address,bytes,bytes)")
-      ),
-      execData: hostInterface.encodeFunctionData(
-        "callAgreement(address,bytes,bytes)",
-        //token, sender, receiver, ctx
-        [CFAV1Adress, callData, "0x"]
-      ),
-      execAbi: hostInterface.format("json"),
-      startTime: 120,
-      name: "Stop superfluid stream in 120 seconds",
-      dedicatedMsgSender: true,
-    });
+    try {
+      const { taskId, tx } = await gelatoOps.createTask({
+        execAddress: contractToAutomate,
+        execSelector: constantFlowAgreementContract.interface.getSighash(
+          hostInterface.getFunction("callAgreement(address,bytes,bytes)")
+        ),
+        execData: hostInterface.encodeFunctionData(
+          "callAgreement(address,bytes,bytes)",
+          //token, sender, receiver, ctx
+          [CFAV1Adress, callData, "0x"]
+        ),
+        execAbi: hostInterface.format("json"),
+        startTime: 120,
+        name: `Stop vesting schedule for ${recipient}`,
+        dedicatedMsgSender: true,
+      });
+      onSuccess(taskId, tx);
+    } catch (e) {
+      console.log(e);
+    }
   };
   const handleGelato = () => {
     createGelatoTask();
   };
   return (
-    <PrimaryButton onClick={handleGelato}>create gelato task</PrimaryButton>
+    <PrimaryButton className="max-w-fit" onClick={handleGelato}>
+      Create Gelato Task
+    </PrimaryButton>
   );
 };
 
@@ -130,7 +138,11 @@ const UpdateSream = ({ chainId, operator, onSuccess }) => {
     }
   };
 
-  return <button onClick={handleFlowPermissions}>update</button>;
+  return (
+    <PrimaryButton className="max-w-fit" onClick={handleFlowPermissions}>
+      Give delete permission
+    </PrimaryButton>
+  );
 };
 // as an operator
 const DeleteStream = ({ chainId, recipient, sender }) => {
@@ -149,6 +161,20 @@ const DeleteStream = ({ chainId, recipient, sender }) => {
   return <PrimaryButton onClick={handleDelete}>delte</PrimaryButton>;
 };
 
+const StepDescription = ({ title, children }) => {
+  return (
+    <div className="relative mt-1 border-t border-transparent text-left">
+      <h3>
+        {/* <span className="absolute inset-0 -top-px"></span> */}
+        {title}
+      </h3>
+      <div className="mt-2  flex flex-col items-end justify-between text-sm leading-6 text-slate-700">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const GelatoAutomation = ({ sender, recipient, superTokenSymbol }) => {
   const [step, setStep] = useState(0);
   const { chain } = useNetwork();
@@ -157,59 +183,57 @@ const GelatoAutomation = ({ sender, recipient, superTokenSymbol }) => {
     "0x3E14dC1b13c488a8d5D310918780c983bD5982E7";
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-6">
       <Stepper>
         <Step current={step === 0}>Permissions</Step>
-        <Step current={step === 1}>Fund Gelato</Step>
+        <Step current={step === 1}>Automate</Step>
         <Step current={step === 2} last>
-          Automate
+          Fund Gelato
         </Step>
       </Stepper>
       <div>
         {step === 0 && (
-          <UpdateSream
-            chainId={137}
-            operator={GELATO_CONTRACT_ADDRESS}
-            onSuccess={() => setStep(1)}
-          />
+          <StepDescription title="Update Stream">
+            <p>
+              We first need to authorize the automation infrastructure to delete
+              streams on your behalf.
+            </p>
+            <UpdateSream
+              chainId={137}
+              operator={GELATO_CONTRACT_ADDRESS}
+              onSuccess={() => setStep(1)}
+            />
+          </StepDescription>
         )}
         {step === 1 && (
-          <div className="relative -mt-px border-t border-transparent pt-4 pb-6 text-left hover:border-slate-400 md:pb-10 md:pt-8">
-            <h3>
-              <button
-                className="whitespace-nowrap text-sm font-semibold leading-7 text-slate-900 sm:text-base [&:not(:focus-visible)]:focus:outline-none"
-                id="headlessui-tabs-tab-3"
-                role="tab"
-                type="button"
-                aria-selected="false"
-              >
-                <span className="absolute inset-0 -top-px"></span>
-                Fund Gelato
-              </button>
-            </h3>
-            <p className="mt-2 hidden text-sm leading-6 text-slate-700 md:block">
-              Automation functionality is powered by Gelato Network and requires
-              you to fund an account.
-              <a
-                target="_blank"
-                rel="noreferrer"
-                href="https://app.gelato.network"
-              >
-                Fund your account
-              </a>
+          <StepDescription title="Create automation">
+            <p>
+              Now we create a permissionless automation task that will cancel
+              the vesting schedule on your behalf.
             </p>
-          </div>
+            <CreateGelatoTaskButton
+              chainId={137}
+              operator={SUPERFLUID_CONTRACT_ADDRESS}
+              contractToAutomate={SUPERFLUID_CONTRACT_ADDRESS}
+              sender={sender}
+              recipient={recipient}
+              onSuccess={() => setStep(2)}
+              superTokenSymbol={superTokenSymbol}
+            />
+          </StepDescription>
         )}
         {step === 2 && (
-          <CreateGelatoTaskButton
-            chainId={137}
-            operator={SUPERFLUID_CONTRACT_ADDRESS}
-            contractToAutomate={SUPERFLUID_CONTRACT_ADDRESS}
-            sender={sender}
-            recipient={recipient}
-            onSuccess={() => setStep(2)}
-            superTokenSymbol={superTokenSymbol}
-          />
+          <StepDescription title="Fund Gelato">
+            Automation functionality is powered by Gelato Network and requires
+            you to fund an account.
+            <a
+              target="_blank"
+              rel="noreferrer"
+              href="https://app.gelato.network"
+            >
+              Fund your account
+            </a>
+          </StepDescription>
         )}
       </div>
     </div>
@@ -222,6 +246,7 @@ export const GelatoAutomationModal = ({
   superTokenSymbol = "",
   children,
 }) => {
+  console.log({ sender, recipient, superTokenSymbol });
   const [showModal, setShowModal] = useState(false);
   const handleShowModal = () => {
     setShowModal(true);
@@ -231,7 +256,6 @@ export const GelatoAutomationModal = ({
       <Modal show={showModal} onClose={() => setShowModal(false)}>
         <ModalTitle>Automate Stream for {shortAddress(sender)}</ModalTitle>
         <ModalBody>
-          <Label>Stream automation works with Gelato</Label>
           <GelatoAutomation
             sender={sender}
             recipient={recipient}

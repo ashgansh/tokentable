@@ -131,7 +131,7 @@ const StreamRow = ({ stream, chainId, onCancelStream }) => {
         <GelatoAutomationModal
           sender={stream.sender}
           recipient={stream.receiver}
-          superTokenSymbol={stream.symbol}
+          superTokenSymbol={stream.token.symbol}
         >
           <BoltIcon className="w-4 text-white" />
           Automate
