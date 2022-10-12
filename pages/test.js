@@ -2,17 +2,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Framework } from '@superfluid-finance/sdk-core';
 import { useAccount, useNetwork, useSigner } from 'wagmi';
-import { useController, useForm } from 'react-hook-form';
+import { set, useController, useForm } from 'react-hook-form';
 import { Interface, isAddress, parseEther } from 'ethers/lib/utils';
 import { Combobox } from '@headlessui/react';
 import {
     ArrowsRightLeftIcon,
+    BoltIcon,
     ChevronUpDownIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
-import { formatAddress, classNames, formatCurrency } from '@/lib/utils';
+import {
+    formatAddress,
+    classNames,
+    formatCurrency,
+    shortAddress,
+} from '@/lib/utils';
 import { tokenStore, useTokenPrice } from '@/lib/tokens';
 import { getProvider } from '@/lib/provider';
 
@@ -37,6 +43,7 @@ import {
 } from '@/lib/superfluid/helpers';
 import { ConstantFlowAgreementV1ABI, HostABI } from '@/lib/superfluid/abi';
 import { Contract } from 'ethers';
+import Stepper, { Step } from '@/components/Stepper.tsx';
 
 // proxy
 // '0x31D5847E2b7c43b90Aee696519465a8d9F75E9EC',
@@ -47,11 +54,12 @@ const CreateGelatoTaskButton = ({
     contractToAutomate,
     sender,
     recipient,
+    superTokenSymbol,
 }) => {
     const { data: signer } = useSigner();
     const createGelatoTask = async () => {
         const superTokenContract = await getSuperTokenContract(
-            'MATICx',
+            superTokenSymbol,
             chainId,
             signer
         );
@@ -102,20 +110,25 @@ const CreateGelatoTaskButton = ({
     );
 };
 
-const UpdateSream = ({ chainId, operator }) => {
+const UpdateSream = ({ chainId, operator, onSuccess }) => {
     const { data: signer } = useSigner();
     const handleFlowPermissions = async () => {
-        const result = await updateFlowPermissions({
-            // this is gelato OPSv1
-            // sender: '0x54a275FB2aC2391890c2E8471C39d85278C23cEe',
-            operator,
-            chainId,
-            // delete permission
-            permissionType: 4,
-            signer,
-            superTokenSymbol: 'MATICx',
-        });
-        console.log(result);
+        try {
+            const result = await updateFlowPermissions({
+                // this is gelato OPSv1
+                // sender: '0x54a275FB2aC2391890c2E8471C39d85278C23cEe',
+                operator,
+                chainId,
+                // delete permission
+                permissionType: 4,
+                signer,
+                superTokenSymbol: 'MATICx',
+            });
+            console.log(result);
+            onSuccess();
+        } catch (e) {
+            console.error(e);
+        }
     };
 
     return <button onClick={handleFlowPermissions}>update</button>;
@@ -137,31 +150,103 @@ const DeleteStream = ({ chainId, recipient, sender }) => {
     return <PrimaryButton onClick={handleDelete}>delte</PrimaryButton>;
 };
 
-const GelatoAutomation = ({ sender, recipient }) => {
+const GelatoAutomation = ({ sender, recipient, superTokenSymbol }) => {
+    const [step, setStep] = useState(0);
+    const { chain } = useNetwork();
     const GELATO_CONTRACT_ADDRESS =
         '0x527a819db1eb0e34426297b03bae11F2f8B3A19E';
     const SUPERFLUID_CONTRACT_ADDRESS =
         '0x3E14dC1b13c488a8d5D310918780c983bD5982E7';
 
     return (
-        <div className="flex flex-col gap-3">
-            <UpdateSream chainId={137} operator={GELATO_CONTRACT_ADDRESS} />
-            <CreateGelatoTaskButton
-                chainId={137}
-                operator={SUPERFLUID_CONTRACT_ADDRESS}
-                contractToAutomate={SUPERFLUID_CONTRACT_ADDRESS}
-                sender={sender}
-                recipient={recipient}
-            />
+        <div className="flex gap-3">
+            <Stepper>
+                <Step current={step === 0}>Permissions</Step>
+                <Step current={step === 1}>Fund Gelato</Step>
+                <Step current={step === 2} last>
+                    Automate
+                </Step>
+            </Stepper>
+            <div>
+                {step === 0 && (
+                    <UpdateSream
+                        chainId={137}
+                        operator={GELATO_CONTRACT_ADDRESS}
+                        onSuccess={() => setStep(1)}
+                    />
+                )}
+                {step === 1 && (
+                    <div className="relative -mt-px border-t border-transparent pt-4 pb-6 text-left hover:border-slate-400 md:pb-10 md:pt-8">
+                        <h3>
+                            <button
+                                className="whitespace-nowrap text-sm font-semibold leading-7 text-slate-900 sm:text-base [&:not(:focus-visible)]:focus:outline-none"
+                                id="headlessui-tabs-tab-3"
+                                role="tab"
+                                type="button"
+                                aria-selected="false"
+                            >
+                                <span className="absolute inset-0 -top-px"></span>
+                                Fund Gelato
+                            </button>
+                        </h3>
+                        <p className="mt-2 hidden text-sm leading-6 text-slate-700 md:block">
+                            Automation functionality is powered by Gelato
+                            Network and requires you to fund an account.
+                            <a
+                                target="_blank"
+                                rel="noreferrer"
+                                href="https://app.gelato.network"
+                            >
+                                Fund your account
+                            </a>
+                        </p>
+                    </div>
+                )}
+                {step === 2 && (
+                    <CreateGelatoTaskButton
+                        chainId={137}
+                        operator={SUPERFLUID_CONTRACT_ADDRESS}
+                        contractToAutomate={SUPERFLUID_CONTRACT_ADDRESS}
+                        sender={sender}
+                        recipient={recipient}
+                        onSuccess={() => setStep(2)}
+                        superTokenSymbol={superTokenSymbol}
+                    />
+                )}
+            </div>
         </div>
     );
 };
 
-const GelatoAutomationModal = ({ show, onClose, chainId }) => {
+const GelatoAutomationModal = ({
+    sender = '',
+    recipient = '',
+    superTokenSymbol = '',
+}) => {
+    const [showModal, setShowModal] = useState(false);
+    const handleShowModal = () => {
+        setShowModal(true);
+    };
     return (
-        <Modal show onClose={() => null}>
-            <GelatoAutomation />
-        </Modal>
+        <>
+            <Modal show={showModal} onClose={() => setShowModal(false)}>
+                <ModalTitle>
+                    Automate Stream for {shortAddress(sender)}
+                </ModalTitle>
+                <ModalBody>
+                    <Label>Stream automation works with Gelato</Label>
+                    <GelatoAutomation
+                        sender={sender}
+                        recipient={recipient}
+                        superTokenSymbol={superTokenSymbol}
+                    />
+                </ModalBody>
+            </Modal>
+
+            <PrimaryButton onClick={handleShowModal}>
+                <BoltIcon className="w-6 text-white" />
+            </PrimaryButton>
+        </>
     );
 };
 
@@ -175,7 +260,7 @@ const Test = () => {
 
     return (
         <LayoutWrapper>
-            <GelatoAutomationModal />
+            <GelatoAutomationModal show />
         </LayoutWrapper>
     );
 };
