@@ -5,7 +5,11 @@ import { useAccount, useNetwork, useSigner } from "wagmi";
 import { useController, useForm } from "react-hook-form";
 import { isAddress, parseEther } from "ethers/lib/utils";
 import { Combobox } from "@headlessui/react";
-import { CalendarDaysIcon, ChevronUpDownIcon, LinkIcon } from "@heroicons/react/24/outline";
+import {
+  CalendarDaysIcon,
+  ChevronUpDownIcon,
+  LinkIcon,
+} from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -570,9 +574,11 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
         <div className="flex items-center justify-between">
-          <a href={senderStreamLink}>
-            <TableTitle>{shortAddress(senderAccount)}</TableTitle>
-          </a>
+          {senderAccount && (
+            <a href={senderStreamLink}>
+              <TableTitle>{shortAddress(senderAccount)}</TableTitle>
+            </a>
+          )}
           <div className="flex gap-2">
             {canAddStream && isConnectedWithCorrectChain && (
               <PrimaryButton onClick={handleOpenAddStreamModal}>
