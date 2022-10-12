@@ -268,6 +268,9 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     return now < startTime;
   };
 
+  const cannotBeOwnAccount = (beneficiary) =>
+    beneficiary.toLowerCase() !== account.toLowerCase();
+
   const canAddToCalendar = useMemo(
     () => isAddress(beneficiary) && isInFuture(endDateTime),
     [beneficiary, endDateTime]
@@ -379,13 +382,15 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
                 placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
                 {...register("beneficiary", {
                   required: true,
-                  validate: { isAddress },
+                  validate: { isAddress, cannotBeOwnAccount },
                 })}
               />
               <span className="text-xs text-red-400">
                 {errors?.beneficiary?.type === "required" &&
                   "A valid address is required"}
                 {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
+                {errors?.beneficiary?.type === "cannotBeOwnAccount" &&
+                  "You cannot stream tokens to yourself"}
               </span>
             </div>
             <div>
