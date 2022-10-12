@@ -350,7 +350,11 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
         superToken: tokenAddress,
         flowRate,
       });
-      const txResponse = await createFlowOperation.exec(signer);
+      const createFlowTx =
+        await createFlowOperation.getPopulatedTransactionRequest(signer);
+      delete createFlowTx["maxFeePerGas"];
+      delete createFlowTx["maxPriorityFeePerGas"];
+      const txResponse = await signer.sendTransaction(createFlowTx);
       toast.loading("Creating new stream...", { id: toastId });
       await txResponse.wait();
       toast.success("Success", { id: toastId });
