@@ -220,8 +220,6 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
     [beneficiary, endDateTime]
   )
 
-  console.log(canAddToCalendar)
-
   const tokenDetails = useMemo(
     () => superTokens.find((token) => token.id === tokenAddress),
     [superTokens, tokenAddress]
@@ -423,7 +421,6 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
 
   const contractChainId = chainId;
   const currentChainId = chain?.id;
-  console.log(account === senderAccount);
 
   const canAddStream = account === senderAccount;
   const canCancelStream = account === senderAccount;
@@ -431,12 +428,6 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
     ? currentChainId === contractChainId
     : true;
 
-  console.log(
-    isConnectedWithCorrectChain,
-    isLockedChain,
-    currentChainId,
-    contractChainId
-  );
   const retrieveVestingData = useCallback(() => {
     if (!senderAccount || isNaN(contractChainId)) return;
 
