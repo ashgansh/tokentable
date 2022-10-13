@@ -231,7 +231,7 @@ const VestingTable = ({ streams, chainId, isLoading, onCancelStream }) => {
               {isLoading && <LoadingGrantRow />}
             </tbody>
           </table>
-          {streams.length === 0 && (
+          {streams.length === 0 && !isLoading && (
             <EmptyVestingState className="bg-white py-4">
               {/* <PrimaryButton>
                 <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
