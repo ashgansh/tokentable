@@ -230,13 +230,14 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                         )}
                       ></span>
                       <span>
-                        {token.balance &&
-                          formatToken(
-                            token.balance,
-                            token.decimals,
-                            token.symbol,
-                            { symbol: "prepend" }
-                          )}
+                        {token.balance
+                          ? formatToken(
+                              token.balance,
+                              token.decimals,
+                              token.symbol,
+                              { symbol: "prepend" }
+                            )
+                          : token.symbol}
                       </span>
                     </div>
                   )}
@@ -363,7 +364,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
       const txResponse = await signer.sendTransaction(createFlowTx);
       toast.loading("Creating new stream...", { id: toastId });
       await txResponse.wait();
-      record("A superfluid stream was created")
+      record("A superfluid stream was created");
       toast.success("Success", { id: toastId });
       onClose();
     } catch (e) {
@@ -555,7 +556,7 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
       const txResponse = await deleteFlowOperation.exec(signer);
       toast.loading("Canceling stream...", { id: toastId });
       await txResponse.wait();
-      record("A superfluid stream was manually canceled")
+      record("A superfluid stream was manually canceled");
       toast.success("Success", { id: toastId });
     } catch (e) {
       console.error(e);
