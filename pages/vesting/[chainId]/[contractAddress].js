@@ -8,8 +8,6 @@ import {
   ArrowsRightLeftIcon,
   BookmarkIcon as BookmarkIconOutline,
   CalendarDaysIcon,
-  InformationCircleIcon,
-  LinkIcon,
   PlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -17,21 +15,16 @@ import { BookmarkIcon as BookmarkIconSolid } from "@heroicons/react/24/solid";
 import toast from "react-hot-toast";
 
 import { getVestingContractDetails } from "@/lib/vesting";
-import {
-  useTokenDetails,
-  useTokenFormatter,
-  useTokenPrice,
-} from "@/lib/tokens";
+import { getTokenBalance, useTokenDetails, useTokenPrice } from "@/lib/tokens";
 import { portfolioStore } from "@/lib/portfolio";
 import {
   formatAddress,
-  classNames,
   formatCurrency,
   shortAddress,
   record,
 } from "@/lib/utils";
 
-import { CurrencyInput, Input, Label } from "@/components/Input";
+import { CurrencyInput, Label } from "@/components/Input";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 import {
   Modal,
@@ -39,11 +32,7 @@ import {
   ModalBody,
   ModalTitle,
 } from "@/components/Modal";
-import {
-  OutlineButton,
-  PrimaryButton,
-  SecondaryButton,
-} from "@/components/Button";
+import { PrimaryButton, SecondaryButton } from "@/components/Button";
 import Spinner from "@/components/Spinner";
 import VestingPosition from "@/components/VestingPosition";
 import SwitchChainButton from "@/components/SwitchChainButton";
@@ -53,8 +42,13 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import AddScheduleModal from "@/components/CreateSchedule";
 import { useHasHydrated } from "@/lib/hooks";
 import { getAddressBlockExplorerLink } from "@/lib/provider";
+import axios from "axios";
+import VestingDraftsTable from "@/components/VestingDraftsTable";
+import { useSession } from "next-auth/react";
 
-const VestingDashboard = ({ vestingData, isLoading }) => {
+const ENABLE_DRAFTS = false
+
+const VestingDashboard = ({ vestingData, vestingDrafts, isLoading }) => {
   const { address: account } = useAccount();
   const myGrants =
     vestingData?.grants?.filter((grant) => grant.beneficiary === account) || [];
@@ -109,6 +103,15 @@ const VestingDashboard = ({ vestingData, isLoading }) => {
           isLoading={isLoading}
         />
       </div>
+      {vestingDrafts && vestingDrafts.length > 0 && (
+        <>
+          <h2 className="py-2 text-lg">Drafts</h2>
+          <VestingDraftsTable
+            drafts={vestingDrafts}
+            chainId={vestingData?.chainId}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -127,7 +130,7 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   };
 
   const handleClickBookmark = () => {
-    record("The bookmark button was clicked")
+    record("The bookmark button was clicked");
     isBookmarked ? handleRemovePorfolioItem() : handleAddPortfolioItem();
   };
 
@@ -236,7 +239,9 @@ const AddFundsModal = ({
           account
         );
         setTokenBalance(tokenBalance);
-      } catch (e) {}
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     retrieveTokenBalance();
@@ -250,8 +255,10 @@ const AddFundsModal = ({
 
   const withinBalance = (tokenAmount) => {
     try {
-      return tokenBalance.gte(parseUnits(tokenAmount, decimals));
-    } catch (e) {}
+      return tokenBalance.gte(parseUnits(tokenAmount, tokenDecimals));
+    } catch (e) {
+      return true;
+    }
   };
 
   const handleAddFunds = async ({ amount }) => {
@@ -336,11 +343,14 @@ export const Vesting = ({
   const [showAddScheduleModal, setShowAddScheduleModal] = useState(false);
   const [showAddFundsModal, setShowAddFundsModal] = useState(false);
   const [vestingData, setVestingData] = useState(null);
+  const [vestingDrafts, setVestingDrafts] = useState(null);
   const [vestingMetaData, setVestingMetaData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   // this is the current chain!
   const { chain } = useNetwork();
   const { address: account } = useAccount();
+  const { status: authStatus } = useSession()
+  const isAuthenticated = authStatus === "authenticated"
 
   const handleOpenAddScheduleModal = () => setShowAddScheduleModal(true);
   const handleCloseAddScheduleModal = () => setShowAddScheduleModal(false);
@@ -384,8 +394,16 @@ export const Vesting = ({
       setIsLoading(false);
     };
 
+    const retrieveVestingDrafts = async () => {
+      if (!ENABLE_DRAFTS) return
+      if (!isAuthenticated) return
+      const response = await axios.get("/api/drafts");
+      setVestingDrafts(response.data);
+    };
+
     retrieveVestingData();
-  }, [contractAddress, contractChainId, filters]);
+    retrieveVestingDrafts();
+  }, [contractAddress, contractChainId, filters, isAuthenticated]);
 
   useEffect(() => {
     retrieveVestingData();
@@ -401,6 +419,7 @@ export const Vesting = ({
             onClose={handleCloseAddScheduleModal}
             onSuccess={retrieveVestingData}
             chainId={contractChainId}
+            contractAddress={contractAddress}
             tokenAddresses={tokenAddresses}
             addVestingSchedule={addVestingSchedule}
             getAdminTokenAllowance={getAdminTokenAllowance}
@@ -463,7 +482,11 @@ export const Vesting = ({
         </div>
       </div>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
-        <VestingDashboard vestingData={vestingData} isLoading={isLoading} />
+        <VestingDashboard
+          vestingData={vestingData}
+          vestingDrafts={vestingDrafts}
+          isLoading={isLoading}
+        />
       </div>
     </LayoutWrapper>
   );

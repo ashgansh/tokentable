@@ -1,51 +1,77 @@
-import { useEffect, useState } from 'react'
-import { useController, useForm } from 'react-hook-form'
-import { useAccount, useSigner } from 'wagmi'
-import { isAddress, parseUnits } from "ethers/lib/utils"
+import { useEffect, useState } from 'react';
+import { useController, useForm } from 'react-hook-form';
+import { useAccount, useSigner } from 'wagmi';
+import { isAddress, parseUnits } from 'ethers/lib/utils';
 
-import { Combobox } from '@headlessui/react'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
+import { Combobox } from '@headlessui/react';
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 
-import { classNames, formatCurrency, record } from '@/lib/utils'
-import { tokenStore, useMultipleTokenDetails, useTokenDetails, useTokenFormatter, useTokenPrice } from '@/lib/tokens'
+import { classNames, formatCurrency, record } from '@/lib/utils';
+import {
+  tokenStore,
+  useMultipleTokenDetails,
+  useTokenDetails,
+  useTokenFormatter,
+  useTokenPrice,
+} from '@/lib/tokens';
 
-import { Modal, ModalActionFooter, ModalBody, ModalTitle } from '@/components/Modal'
-import { CurrencyInput, Input, Label } from '@/components/Input'
-import { PrimaryButton } from '@/components/Button'
-import Spinner from '@/components/Spinner'
-import toast from 'react-hot-toast'
-import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline'
+import {
+  Modal,
+  ModalActionFooter,
+  ModalBody,
+  ModalTitle,
+} from '@/components/Modal';
+import { CurrencyInput, Input, Label } from '@/components/Input';
+import { PrimaryButton, SecondaryButton } from '@/components/Button';
+import Spinner from '@/components/Spinner';
+import toast from 'react-hot-toast';
+import { ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
+import { useLogin } from '@/lib/auth';
+import axios from 'axios';
 
-const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) => {
-  const [query, setQuery] = useState('')
-  const { field: { value, onChange } } = useController(args);
-  const addToken = tokenStore((state) => state.addToken)
+const ENABLE_DRAFTS = false;
 
-  const allTokenDetails = useMultipleTokenDetails(chainId, [...tokenAddresses, query])
-  const allTokenAddresses = Object.keys(allTokenDetails)
+const TokenCombobox = ({
+  chainId,
+  tokenAddresses,
+  disabled = false,
+  ...args
+}) => {
+  const [query, setQuery] = useState('');
+  const {
+    field: { value, onChange },
+  } = useController(args);
+  const addToken = tokenStore((state) => state.addToken);
+
+  const allTokenDetails = useMultipleTokenDetails(chainId, [
+    ...tokenAddresses,
+    query,
+  ]);
+  const allTokenAddresses = Object.keys(allTokenDetails);
 
   const filteredTokenAddresses =
     query === ''
       ? allTokenAddresses
-      : Object
-        .entries(allTokenDetails)
-        .filter(([address, details]) =>
-          address.toLowerCase().includes(query.toLowerCase()) ||
-          details.symbol.toLowerCase().includes(query.toLowerCase()))
-        .map(([address]) => address)
+      : Object.entries(allTokenDetails)
+          .filter(
+            ([address, details]) =>
+              address.toLowerCase().includes(query.toLowerCase()) ||
+              details.symbol.toLowerCase().includes(query.toLowerCase())
+          )
+          .map(([address]) => address);
 
   useEffect(() => {
-    if (!chainId) return
-    if (!isAddress(query)) return
+    if (!chainId) return;
+    if (!isAddress(query)) return;
 
-    addToken(chainId, query)
-  }, [query, chainId, addToken])
+    addToken(chainId, query);
+  }, [query, chainId, addToken]);
 
-  const tokenDetails = (tokenAddress) => allTokenDetails?.[tokenAddress]
+  const tokenDetails = (tokenAddress) => allTokenDetails?.[tokenAddress];
   const displayValue = (tokenAddress) => {
-    const details = tokenDetails(tokenAddress)
-    return details ? `${details.symbol} (${tokenAddress})` : tokenAddress
-  }
+    const details = tokenDetails(tokenAddress);
+    return details ? `${details.symbol} (${tokenAddress})` : tokenAddress;
+  };
 
   return (
     <Combobox as="div" value={value} onChange={onChange} disabled={disabled}>
@@ -56,7 +82,10 @@ const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) =
           displayValue={displayValue}
         />
         <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
-          <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <ChevronUpDownIcon
+            className="h-5 w-5 text-gray-400"
+            aria-hidden="true"
+          />
         </Combobox.Button>
         <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
           {filteredTokenAddresses.map((tokenAddress) => (
@@ -72,7 +101,12 @@ const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) =
             >
               {({ active, selected }) => (
                 <>
-                  <span className={classNames('block truncate', selected && 'font-semibold')}>
+                  <span
+                    className={classNames(
+                      'block truncate',
+                      selected && 'font-semibold'
+                    )}
+                  >
                     {displayValue(tokenAddress)}
                   </span>
                   {selected && (
@@ -92,117 +126,172 @@ const TokenCombobox = ({ chainId, tokenAddresses, disabled = false, ...args }) =
         </Combobox.Options>
       </div>
     </Combobox>
-  )
-}
+  );
+};
 
-const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, addVestingSchedule, getAdminTokenAllowance, isMultiToken }) => {
-  const { handleSubmit, register, reset, getValues, watch, control, formState: { errors, isSubmitting } } = useForm({
+const AddScheduleModal = ({
+  show,
+  onClose,
+  onSuccess,
+  chainId,
+  contractAddress,
+  tokenAddresses,
+  addVestingSchedule,
+  getAdminTokenAllowance,
+  isMultiToken,
+}) => {
+  const {
+    handleSubmit,
+    register,
+    reset,
+    getValues,
+    watch,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
     defaultValues: {
-      tokenAddress: tokenAddresses?.[0]
-    }
-  })
-  const { address: account } = useAccount()
-  const [tokenAllowance, setTokenAllowance] = useState(null)
-  const { data: signer } = useSigner()
+      tokenAddress: tokenAddresses?.[0],
+      beneficiary: '0xe8c475e7d1783d342FE11B7a35E034980aed0769',
+      start: '2022-11-01T08:30',
+      end: '2023-11-01T08:30',
+      amount: 100,
+    },
+  });
+  const { address: account } = useAccount();
+  const [tokenAllowance, setTokenAllowance] = useState(null);
+  const { data: signer } = useSigner();
+  const login = useLogin();
 
-  const amount = watch("amount")
-  const tokenAddress = watch("tokenAddress")
-  const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(chainId, tokenAddress)
-  const tokenPrice = useTokenPrice(chainId, tokenAddress)
-  const formatToken = useTokenFormatter(chainId, tokenAddress)
-
+  const amount = watch('amount');
+  const tokenAddress = watch('tokenAddress');
+  const { symbol: tokenSymbol, decimals: tokenDecimals } = useTokenDetails(
+    chainId,
+    tokenAddress
+  );
+  const tokenPrice = useTokenPrice(chainId, tokenAddress);
+  const formatToken = useTokenFormatter(chainId, tokenAddress);
 
   useEffect(() => {
-    if (!account) return
-    if (!tokenAddress) return
-    if (!getAdminTokenAllowance) return
+    if (!account) return;
+    if (!tokenAddress) return;
+    if (!getAdminTokenAllowance) return;
 
     const retrieveTokenAllowance = async () => {
-      const allowance = await getAdminTokenAllowance(tokenAddress, account)
-      setTokenAllowance(allowance)
-    }
+      const allowance = await getAdminTokenAllowance(tokenAddress, account);
+      setTokenAllowance(allowance);
+    };
 
-    retrieveTokenAllowance()
-  }, [getAdminTokenAllowance, account, tokenAddress])
+    retrieveTokenAllowance();
+  }, [getAdminTokenAllowance, account, tokenAddress]);
 
   const withinTokenAllowance = (amount) => {
-    if (!tokenAllowance) return true
+    if (!tokenAllowance) return true;
 
     try {
-      return tokenAllowance.gte(parseUnits(amount, tokenDecimals))
+      return tokenAllowance.gte(parseUnits(amount, tokenDecimals));
     } catch (e) {
-      return true
+      return true;
     }
-  }
+  };
 
   const getUSDValue = (amount) => {
-    if (!tokenPrice) return
-    if (!amount) return
-    return formatCurrency(tokenPrice * amount, 'USD')
-  }
+    if (!tokenPrice) return;
+    if (!amount) return;
+    return formatCurrency(tokenPrice * amount, 'USD');
+  };
 
   const startIsInFuture = (start) => {
-    const now = Date.now()
-    const startTime = new Date(start).getTime()
-    return now < startTime
-  }
+    const now = Date.now();
+    const startTime = new Date(start).getTime();
+    return now < startTime;
+  };
 
   const endIsAfterStart = (end) => {
-    const start = getValues("start")
-    const startTime = Math.round(new Date(start).getTime() / 1000)
-    const endTime = Math.round(new Date(end).getTime() / 1000)
-    return endTime > startTime
-  }
+    const start = getValues('start');
+    const startTime = Math.round(new Date(start).getTime() / 1000);
+    const endTime = Math.round(new Date(end).getTime() / 1000);
+    return endTime > startTime;
+  };
 
   const executeTransactions = async (signer, transactions) => {
-    const receipts = []
+    const receipts = [];
 
     for (let i = 0; i < transactions.length; i++) {
-      const tx = transactions[i]
-      const toastId = toast.loading("Sign transaction")
+      const tx = transactions[i];
+      const toastId = toast.loading('Sign transaction');
       try {
-        const txResponse = await signer.sendTransaction(tx)
-        toast.loading("Waiting for transaction...", { id: toastId })
-        const txReceipt = await txResponse.wait()
-        receipts.push(txReceipt)
-        toast.success("Success", { id: toastId })
+        const txResponse = await signer.sendTransaction(tx);
+        toast.loading('Waiting for transaction...', { id: toastId });
+        const txReceipt = await txResponse.wait();
+        receipts.push(txReceipt);
+        toast.success('Success', { id: toastId });
       } catch (e) {
-        console.error(e)
+        console.error(e);
 
         // User didn't sign transaction
-        if (e?.code === 4001 || e?.code === "ACTION_REJECTED") {
-          toast.dismiss(toastId)
-          break
+        if (e?.code === 4001 || e?.code === 'ACTION_REJECTED') {
+          toast.dismiss(toastId);
+          break;
         }
 
         // Display error message
         const message = e?.data?.message || e?.error?.message || e.message;
-        toast.error("Something went wrong...", { id: toastId })
-        toast.error(message)
+        toast.error('Something went wrong...', { id: toastId });
+        toast.error(message);
       }
     }
 
-    return transactions.length === receipts.length
-  }
+    return transactions.length === receipts.length;
+  };
 
-  const handleAddVestingSchedule = async ({ start, end, amount, beneficiary, tokenAddress }) => {
+  const handleQueueVestingSchedule = async ({
+    start,
+    end,
+    amount,
+    beneficiary,
+    tokenAddress,
+  }) => {
+    const schedule = {
+      startTime: Math.round(new Date(start).getTime() / 1000),
+      endTime: Math.round(new Date(end).getTime() / 1000),
+      amount,
+      beneficiary,
+      tokenAddress,
+      contractAddress,
+      chainId,
+    };
+
+    await axios.post('/api/drafts', schedule);
+
+    onClose();
+    onSuccess();
+    reset();
+  };
+
+  const handleAddVestingSchedule = async ({
+    start,
+    end,
+    amount,
+    beneficiary,
+    tokenAddress,
+  }) => {
     const schedule = {
       startTime: Math.round(new Date(start).getTime() / 1000),
       endTime: Math.round(new Date(end).getTime() / 1000),
       amount: parseUnits(amount, tokenDecimals),
       beneficiary,
-      tokenAddress
-    }
-    const transactions = await addVestingSchedule(signer, schedule)
-    const success = await executeTransactions(signer, transactions)
+      tokenAddress,
+    };
+    const transactions = await addVestingSchedule(signer, schedule);
+    const success = await executeTransactions(signer, transactions);
 
-    if (!success) return
+    if (!success) return;
 
-    record("A vesting schedule was added")
-    onClose()
-    onSuccess()
-    reset()
-  }
+    record('A vesting schedule was added');
+    onClose();
+    onSuccess();
+    reset();
+  };
 
   return (
     <Modal show={show} onClose={onClose}>
@@ -214,33 +303,47 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
               <Label>Stakeholder Address</Label>
               <Input
                 placeholder="0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe"
-                {...register("beneficiary", { required: true, validate: { isAddress } })}
+                {...register('beneficiary', {
+                  required: true,
+                  validate: { isAddress },
+                })}
               />
               <span className="text-xs text-red-400">
-                {errors?.beneficiary?.type === "required" && "A valid address is required"}
-                {errors?.beneficiary?.type === "isAddress" && "Invalid address"}
+                {errors?.beneficiary?.type === 'required' &&
+                  'A valid address is required'}
+                {errors?.beneficiary?.type === 'isAddress' && 'Invalid address'}
               </span>
             </div>
             <div>
               <Label>Start</Label>
               <Input
                 type="datetime-local"
-                {...register("start", { required: true, validate: { startIsInFuture } })}
+                {...register('start', {
+                  required: true,
+                  validate: { startIsInFuture },
+                })}
               />
               <span className="text-xs text-red-400">
-                {errors?.start?.type === "startIsInFuture" && "Vesting has to start in the future"}
-                {errors?.start?.type === "required" && "A vesting start is required"}
+                {errors?.start?.type === 'startIsInFuture' &&
+                  'Vesting has to start in the future'}
+                {errors?.start?.type === 'required' &&
+                  'A vesting start is required'}
               </span>
             </div>
             <div>
               <Label>End</Label>
               <Input
                 type="datetime-local"
-                {...register("end", { required: true, validate: { endIsAfterStart } })}
+                {...register('end', {
+                  required: true,
+                  validate: { endIsAfterStart },
+                })}
               />
               <span className="text-xs text-red-400">
-                {errors?.end?.type === "endIsAfterStart" && "Vesting cannot end before it has started"}
-                {errors?.end?.type === "required" && "A vesting end is required"}
+                {errors?.end?.type === 'endIsAfterStart' &&
+                  'Vesting cannot end before it has started'}
+                {errors?.end?.type === 'required' &&
+                  'A vesting end is required'}
               </span>
             </div>
             <div>
@@ -259,41 +362,55 @@ const AddScheduleModal = ({ show, onClose, onSuccess, chainId, tokenAddresses, a
               <CurrencyInput
                 symbol={tokenSymbol}
                 placeholder="0.00"
-                {...register("amount", { required: true, min: 0, validate: { withinTokenAllowance } })}
+                {...register('amount', {
+                  required: true,
+                  min: 0,
+                  validate: { withinTokenAllowance },
+                })}
               />
               {tokenPrice && amount && (
-                <span className="text-xs text-gray-500 flex gap-1 py-2">
+                <span className="flex gap-1 py-2 text-xs text-gray-500">
                   <ArrowsRightLeftIcon className="h-4 w-4" />
                   {getUSDValue(amount)}
                 </span>
               )}
               <span className="text-xs text-red-400">
-                {errors?.amount?.type === "withinTokenAllowance" && "Vesting contract does not have enough tokens available"}
-                {errors?.amount?.type === "min" && "The vesting amount cannot be negative"}
-                {errors?.amount?.type === "required" && "A vesting amount is required"}
+                {errors?.amount?.type === 'withinTokenAllowance' &&
+                  'Vesting contract does not have enough tokens available'}
+                {errors?.amount?.type === 'min' &&
+                  'The vesting amount cannot be negative'}
+                {errors?.amount?.type === 'required' &&
+                  'A vesting amount is required'}
               </span>
             </div>
           </div>
         </ModalBody>
         <ModalActionFooter>
-          <div className="flex justify-between items-center w-full">
-            <p className="text text-gray-800">
+          <div className="flex w-full items-center justify-between">
+            <p className="text text-sm text-gray-500">
               {tokenAllowance && (
                 <>Available tokens to allocate: {formatToken(tokenAllowance)}</>
               )}
             </p>
-            <PrimaryButton type="submit" disabled={isSubmitting}>
-              <span className="inline-flex items-center gap-1.5">
-                {isSubmitting && <Spinner className="h-4 w-4" />}
-                {isSubmitting && <span>Adding schedule</span>}
-                {!isSubmitting && <span>Add schedule</span>}
-              </span>
-            </PrimaryButton>
+            <div className="flex items-center gap-2">
+              {isSubmitting && <Spinner className="h-4 w-4" />}
+              <PrimaryButton type="submit" disabled={isSubmitting}>
+                Add schedule
+              </PrimaryButton>
+              {ENABLE_DRAFTS && (
+                <SecondaryButton
+                  onClick={handleSubmit(handleQueueVestingSchedule)}
+                  disabled={isSubmitting}
+                >
+                  Save for later
+                </SecondaryButton>
+              )}
+            </div>
           </div>
         </ModalActionFooter>
       </form>
     </Modal>
-  )
-}
+  );
+};
 
-export default AddScheduleModal
+export default AddScheduleModal;
