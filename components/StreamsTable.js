@@ -4,7 +4,6 @@ import {
   BoltIcon,
   ClipboardIcon,
   LinkIcon,
-  PlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
@@ -13,11 +12,12 @@ import { shortAddress } from '@/lib/utils';
 import { getAddressBlockExplorerLink } from '@/lib/provider';
 import { BigNumber } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
-import { PrimaryButton, SecondaryButton } from './Button';
+import { SecondaryButton } from './Button';
 import { GelatoAutomationModal } from 'pages/test';
 import EmptyVestingState from './EmptyVestingSate';
 
 const SECONDS_IN_MONTH = 30 * 24 * 60 * 60;
+const GELATO_AUTOMATION_ENABLED = false
 
 const StreamedAmount = ({
   chainId,
@@ -128,17 +128,18 @@ const StreamRow = ({ stream, chainId, onCancelStream }) => {
           </SecondaryButton>
         )}
       </td>
-
-      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        <GelatoAutomationModal
-          sender={stream.sender}
-          recipient={stream.receiver}
-          superTokenSymbol={stream.token.symbol}
-        >
-          <BoltIcon className="w-4 text-white" />
-          Automate
-        </GelatoAutomationModal>
-      </td>
+      {GELATO_AUTOMATION_ENABLED && (
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+          <GelatoAutomationModal
+            sender={stream.sender}
+            recipient={stream.receiver}
+            superTokenSymbol={stream.token.symbol}
+          >
+            <BoltIcon className="w-4 text-white" />
+            Automate
+          </GelatoAutomationModal>
+        </td>
+      )}
     </tr>
   );
 };
