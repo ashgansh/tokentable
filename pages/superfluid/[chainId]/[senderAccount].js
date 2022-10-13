@@ -30,7 +30,7 @@ import {
   ModalSubtitle,
   ModalTitle,
 } from "@/components/Modal";
-import { Label, Input, TokenAmountInput } from "@/components/Input";
+import { Label, Input, TokenAmountInput, CustomDatePicker } from "@/components/Input";
 import { PrimaryButton, SecondaryButton } from "@/components/Button";
 import Spinner from "@/components/Spinner";
 import StreamsTable from "@/components/StreamsTable";
@@ -438,6 +438,7 @@ const AddStreamModal = ({ show, onClose, chainId }) => {
               <div className="grow">
                 <Label optional>Set a reminder to end this stream</Label>
                 <Input type="datetime-local" {...register("endDateTime")} />
+                <CustomDatePicker />
               </div>
               <SecondaryButton
                 className="mb-1"
