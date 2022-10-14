@@ -3,22 +3,25 @@ import { RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
 import Alert, { SmartContractAudit } from './Alert';
 
-const mailingLists = [
-  {
-    id: 1,
-    title: 'Sablier',
-    description:
-      'Create your vesting contract on sablier. Sablier secures $55M+ of assets.',
-  },
-  {
+const protocolList = [
+{
     id: 2,
     title: 'Superfluid',
+    disabled: false,
     description:
       'Create your vesting contract on Superfluid. Superfluid is trusted by organisations everywhere to create realtime payments. ',
   },
   {
+    id: 1,
+    title: 'Sablier (coming soon)',
+    disabled: true,
+    description:
+      'Create your vesting contract on sablier. Sablier secures $55M+ of assets.',
+  },
+  {
     id: 3,
-    title: 'TokenOps',
+    title: 'TokenOps (coming soon)',
+    disabled: true,
     description: (
       <div>
         <SmartContractAudit />
@@ -34,17 +37,21 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-export default function Radio() {
-  const [selectedMailingLists, setSelectedMailingLists] = useState(
-    mailingLists[0]
+export default function ProtocolRadio({ onChange = () => { } }) {
+  const [selectedProtocol, setSelectedProtocol] = useState(
+    protocolList[0]
   );
+  const handleSelect = (e) => {
+    console.log(e)
+    setSelectedProtocol(e)
+  }
 
   return (
-    <RadioGroup value={selectedMailingLists} onChange={setSelectedMailingLists}>
+    <RadioGroup value={selectedProtocol} onChange={handleSelect}>
       <RadioGroup.Label className="text-base font-medium text-gray-900"></RadioGroup.Label>
 
       <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-3 sm:gap-x-4">
-        {mailingLists.map((mailingList) => (
+        {protocolList.map((mailingList) => (
           <RadioGroup.Option
             key={mailingList.id}
             value={mailingList}
@@ -54,7 +61,8 @@ export default function Radio() {
                 active
                   ? 'border-tokenops-primary-600 ring-2 ring-tokenops-primary-600'
                   : '',
-                'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none'
+                'relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none',
+                mailingList.disabled ? 'opacity-50' : ''
               )
             }
           >
@@ -79,7 +87,7 @@ export default function Radio() {
                 <CheckCircleIcon
                   className={classNames(
                     !checked ? 'invisible' : '',
-                    'h-5 w-5 text-tokenops-primary-600'
+                    'h-5 w-5 text-tokenops-primary-500'
                   )}
                   aria-hidden="true"
                 />
@@ -98,6 +106,6 @@ export default function Radio() {
           </RadioGroup.Option>
         ))}
       </div>
-    </RadioGroup>
+    </RadioGroup >
   );
 }

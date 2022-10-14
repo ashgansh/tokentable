@@ -1,5 +1,6 @@
 import Banner from "@/components/Alert";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
+import SwitchChainButton from "@/components/SwitchChainButton";
 import { useHasHydrated } from "@/lib/hooks";
 import { LinkIcon } from "@heroicons/react/24/outline";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -11,7 +12,7 @@ const {
 } = require("./[chainId]/[senderAccount]");
 
 const SuperfluidDynamic = () => {
-  const { address: account } = useAccount();
+  const { address: account, isConnected } = useAccount();
   const { chain } = useNetwork();
   const hasHydrated = useHasHydrated();
   const isSupportedChain = chain?.id === 137;
@@ -39,10 +40,12 @@ const SuperfluidDynamic = () => {
           senderAccount={account}
         />
       )}
-      {!isSupportedChain && (
-        <div className="flex justify-center">
-          We currently only support Superfluid on polygon
+      {!isSupportedChain && isConnected && (
+        <div className="flex flex-col justify-center items-center gap-3">
+          <div>We currently only support Superfluid on polygon</div>
+          <SwitchChainButton chainId={137} />
         </div>
+
       )}
     </LayoutWrapper>
   );

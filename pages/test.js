@@ -154,14 +154,14 @@ const DeleteStream = ({ chainId, recipient, sender }) => {
   return <PrimaryButton onClick={handleDelete}>delte</PrimaryButton>;
 };
 
-const StepDescription = ({ title, children }) => {
+export const StepDescription = ({ title, children }) => {
   return (
     <div className="relative mt-1 border-t border-transparent text-left">
       <h3>
         {/* <span className="absolute inset-0 -top-px"></span> */}
         {title}
       </h3>
-      <div className="mt-2  flex flex-col items-end justify-between text-sm leading-6 text-slate-700">
+      <div className="mt-2  flex justify-between text-sm leading-6 text-slate-700">
         {children}
       </div>
     </div>
