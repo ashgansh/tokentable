@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { InsightBody, InsightItem, InsightsCard, InsightMainStat, InsightTitle, InsightSubStat } from "@/components/Insights";
 
 const Unauthenticated = () => (
   <div className="mt-12 flex flex-col items-center">
@@ -50,7 +51,43 @@ const OrganizationDashboard = ({ organization }) => {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8"></div>
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 md:px-8">
+        <InsightsCard>
+          <InsightItem>
+            <InsightTitle>Total Allocated</InsightTitle>
+            <InsightBody>
+              <InsightMainStat>51.17M REQ</InsightMainStat>
+              <InsightSubStat>$18M</InsightSubStat>
+            </InsightBody>
+          </InsightItem>
+          <InsightItem>
+            <InsightTitle>Vested Allocation</InsightTitle>
+            <InsightBody>
+              <InsightMainStat>80.16%</InsightMainStat>
+            </InsightBody>
+          </InsightItem>
+          <InsightItem>
+            <InsightTitle>Tokens Withdrawn</InsightTitle>
+            <InsightBody>
+              <InsightMainStat>38.07M</InsightMainStat>
+              <InsightSubStat>$8M</InsightSubStat>
+            </InsightBody>
+          </InsightItem>
+          <InsightItem>
+            <InsightTitle>Remaining to allocate</InsightTitle>
+            <InsightBody>
+              <InsightMainStat>10.7M</InsightMainStat>
+              <InsightSubStat>$2M</InsightSubStat>
+            </InsightBody>
+          </InsightItem>
+          <InsightItem>
+            <InsightTitle>Stakeholders</InsightTitle>
+            <InsightBody>
+              <InsightMainStat>120</InsightMainStat>
+            </InsightBody>
+          </InsightItem>
+        </InsightsCard>
+      </div>
     </>
   );
 };
