@@ -148,15 +148,7 @@ const AddScheduleModal = ({
     watch,
     control,
     formState: { errors, isSubmitting },
-  } = useForm({
-    defaultValues: {
-      tokenAddress: tokenAddresses?.[0],
-      beneficiary: '0xe8c475e7d1783d342FE11B7a35E034980aed0769',
-      start: '2022-11-01T08:30',
-      end: '2023-11-01T08:30',
-      amount: 100,
-    },
-  });
+  } = useForm()  
   const { address: account } = useAccount();
   const [tokenAllowance, setTokenAllowance] = useState(null);
   const { data: signer } = useSigner();
