@@ -4,7 +4,14 @@ import { useSession } from "next-auth/react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { InsightBody, InsightItem, InsightsCard, InsightMainStat, InsightTitle, InsightSubStat } from "@/components/Insights";
+import {
+  InsightBody,
+  InsightItem,
+  InsightsCard,
+  InsightMainStat,
+  InsightTitle,
+  InsightSubStat,
+} from "@/components/Insights";
 
 const Unauthenticated = () => (
   <div className="mt-12 flex flex-col items-center">
@@ -38,6 +45,24 @@ const ProtectedPage = ({ children }) => {
 };
 
 const OrganizationDashboard = ({ organization }) => {
+  const [contracts, setContracts] = useState([]);
+  const organizationId = organization._id;
+
+  useEffect(() => {
+    if (!organizationId) return;
+    const retrieveContracts = async () => {
+      const response = await axios.get("/api/vesting-contracts", {
+        params: { organization: organizationId },
+      });
+      setContracts(response.data)
+    };
+    retrieveContracts()
+  }, [organizationId]);
+
+  useEffect(() => {
+    console.log(contracts)
+  }, [contracts])
+
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
@@ -93,23 +118,23 @@ const OrganizationDashboard = ({ organization }) => {
 };
 
 const OrganizationRouter = () => {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const organization = organizations?.[0];
 
   useEffect(() => {
     const retrieveOrganizations = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       const response = await axios.get("/api/organizations");
       setOrganizations(response.data);
-      setIsLoading(false)
+      setIsLoading(false);
     };
     retrieveOrganizations();
   }, []);
 
-  if (isLoading) return <>Loading</>
+  if (isLoading) return <>Loading</>;
 
-  if (!organization && !isLoading) return <></>
+  if (!organization && !isLoading) return <></>;
 
   return <OrganizationDashboard organization={organization} />;
 };
