@@ -4,7 +4,7 @@ import { Popover, Transition } from "@headlessui/react";
 import TokenOpsLogo from "../images/tokentable-logo.svg";
 import AccountButton from "./AccountButton";
 import Link from "next/link";
-import { SecondaryButton } from "./Button";
+import { OutlineButton, SecondaryButton } from "./Button";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export default function Header() {
@@ -40,9 +40,9 @@ export default function Header() {
             </a>
           </Link>
           <div>
-            {/* <SecondaryButton>
+            <OutlineButton>
               <a href="https://tokenops.xyz/register">Get in touch</a>
-            </SecondaryButton> */}
+            </OutlineButton>
           </div>
           <div className="flex flex-shrink-0 ml-4">
             <ConnectButton
