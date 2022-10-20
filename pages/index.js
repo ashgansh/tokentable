@@ -22,7 +22,7 @@ import { useHasHydrated } from "@/lib/hooks";
 import PortfolioContract from "@/components/PortfolioContract";
 import PortfolioPosition from "@/components/PortfolioPosition";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
-import { Input } from "@/components/Input";
+import { Input, Label } from "@/components/Input";
 import Spinner from "@/components/Spinner";
 import { chainId, useAccount } from "wagmi";
 import { useRouter } from "next/router";
@@ -75,34 +75,41 @@ export const NoPortfolioItems = () => {
           Track Vesting Schedules
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {`Start tracking your first vesting contract`}
+          {`Start tracking your first vesting contract.`}
         </p>
         <div>
           <form
             onSubmit={handleSubmit(handleAddContract)}
             className="mt-6 flex"
           >
-            <Input
-              placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
-              className="min-w-[350px]"
-              {...register("vestingContract", {
-                required: true,
-                validate: { isAddress },
-              })}
-            />
-            <span className="text-xs text-red-400">
-              {errors?.beneficiaryAddress &&
-                "A valid vesting address is required"}
-            </span>
+            <div>
+              <Label>Enter a vesting smart contract address</Label>
+              <div className="flex">
+                <Input
+                  placeholder="0x0003ca24e19c30db588aabb81d55bfcec6e196c4"
+                  className="min-w-[350px]"
+                  {...register("vestingContract", {
+                    required: true,
+                    validate: { isAddress },
+                  })}
+                />
+                <PrimaryButton
+                  className="ml-2 min-w-max min-h-content"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && <Spinner className="h-4 text-white" />}
+                  Load Vesting Contract
+                </PrimaryButton>
 
-            <PrimaryButton
-              className="ml-2 min-w-max"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && <Spinner className="h-4 text-white" />}
-              Track your vesting
-            </PrimaryButton>
+              </div>
+              <span className="text-xs text-red-400">
+                {errors?.beneficiaryAddress &&
+                  "A valid vesting address is required"}
+              </span>
+            </div>
+
+
           </form>
           <div className="mt-10">
             <h3 className="text-left text-sm font-medium text-gray-500">
