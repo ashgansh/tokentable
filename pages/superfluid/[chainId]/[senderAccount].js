@@ -41,6 +41,7 @@ import "add-to-calendar-button/assets/css/atcb.css";
 import Banner from "@/components/Alert";
 import { TableTitle } from "pages/vesting/[chainId]/[contractAddress]";
 import { BigNumber } from "ethers";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const SUPERFLUID_ASSETS_BASE_PATH =
   "https://raw.githubusercontent.com/superfluid-finance/assets/master/public";
@@ -142,10 +143,10 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
     query === ""
       ? tokens
       : tokens.filter(
-          (token) =>
-            token.name.toLowerCase().includes(query.toLowerCase()) ||
-            token.symbol.toLowerCase().includes(query.toLowerCase())
-        );
+        (token) =>
+          token.name.toLowerCase().includes(query.toLowerCase()) ||
+          token.symbol.toLowerCase().includes(query.toLowerCase())
+      );
 
   const selectedToken = tokenDetails?.[value];
   const selectedTokenIconURL =
@@ -232,11 +233,11 @@ const TokenCombobox = ({ chainId, tokens, ...args }) => {
                       <span>
                         {token.balance
                           ? formatToken(
-                              token.balance,
-                              token.decimals,
-                              token.symbol,
-                              { symbol: "prepend" }
-                            )
+                            token.balance,
+                            token.decimals,
+                            token.symbol,
+                            { symbol: "prepend" }
+                          )
                           : token.symbol}
                       </span>
                     </div>
@@ -471,7 +472,7 @@ export const Superfluid = ({ senderAccount, isLockedChain, chainId }) => {
   const [vestingData, setVestingData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const addToken = tokenStore((state) => state.addToken);
-  const { address: account } = useAccount();
+  const { address: account, isConnected } = useAccount();
   const { data: signer } = useSigner();
   const { chain } = useNetwork();
 

@@ -40,6 +40,14 @@ const SuperfluidDynamic = () => {
           senderAccount={account}
         />
       )}
+
+      {!isConnected &&
+
+        <div className="flex flex-col justify-center items-center gap-3">
+          <ConnectButton />
+        </div>
+
+      }
       {!isSupportedChain && isConnected && (
         <div className="flex flex-col justify-center items-center gap-3">
           <div>We currently only support Superfluid on polygon</div>
