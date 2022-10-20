@@ -40,7 +40,7 @@ export default function Header() {
             </a>
           </Link>
           <div>
-            <OutlineButton>
+            <OutlineButton className="min-w-max">
               <a href="https://tokenops.xyz/register">Get in touch</a>
             </OutlineButton>
           </div>
