@@ -38,7 +38,7 @@
     "react-hot-toast": "^2.3.0",
     "react-moment": "^1.1.2",
     "siwe": "^1.1.6",
-    "wagmi": "^0.5.12",
+    "wagmi": "^0.7.5",
     "zustand": "^4.1.1"
   },
   "devDependencies": {
