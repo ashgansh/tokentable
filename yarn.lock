@@ -894,7 +894,7 @@
     "@sentry/utils" "7.16.0"
     tslib "^1.9.3"
 
-"@sentry/types@7.16.0":
+"@sentry/types@7.16.0", "@sentry/types@^7.2.0":
   version "7.16.0"
   resolved "https://registry.yarnpkg.com/@sentry/types/-/types-7.16.0.tgz#79c06ada153a84feb949fa49b1c9d15f91decd79"
   integrity sha512-i6D+OK6d0l/k+VQvRp/Pt21WkDEgVBUIZq+sOkEZJczbcfexVdXKeXXoYTD2vYuFq8Yy28fzlsZaKI+NoH94yQ==
@@ -4788,6 +4788,15 @@ posthog-js@1.16.0:
     fflate "^0.4.1"
     rrweb-snapshot "^1.1.7"
 
+posthog-js@^1.33.0:
+  version "1.33.0"
+  resolved "https://registry.yarnpkg.com/posthog-js/-/posthog-js-1.33.0.tgz#73886f893d1fef6e615022ea12674b8e7d077769"
+  integrity sha512-6tCkz7PXfOT8sGoioje29CxyeQmu9SL8JVnjq21rCwU+zRa6Cn48pgcyqSX0Q32WOibdIOT7VoR7ilPv6D/KXg==
+  dependencies:
+    "@sentry/types" "^7.2.0"
+    fflate "^0.4.1"
+    rrweb-snapshot "^1.1.14"
+
 preact-render-to-string@^5.1.19:
   version "5.2.5"
   resolved "https://registry.yarnpkg.com/preact-render-to-string/-/preact-render-to-string-5.2.5.tgz#359b14a45bea2a7b5c0ed2a9c6eb7ea915cf7d5a"
@@ -5174,7 +5183,7 @@ rpc-websockets@^7.5.0:
     bufferutil "^4.0.1"
     utf-8-validate "^5.0.2"
 
-rrweb-snapshot@^1.1.7:
+rrweb-snapshot@^1.1.14, rrweb-snapshot@^1.1.7:
   version "1.1.14"
   resolved "https://registry.yarnpkg.com/rrweb-snapshot/-/rrweb-snapshot-1.1.14.tgz#9d4d9be54a28a893373428ee4393ec7e5bd83fcc"
   integrity sha512-eP5pirNjP5+GewQfcOQY4uBiDnpqxNRc65yKPW0eSoU1XamDfc4M8oqpXGMyUyvLyxFDB0q0+DChuxxiU2FXBQ==

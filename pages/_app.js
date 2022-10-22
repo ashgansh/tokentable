@@ -25,6 +25,7 @@ function MyApp({ Component, pageProps }) {
   usePostHog('phc_VSkCZnXOSrwzLGrJXjV3AfjZ2wmiCtDKEMLuiTMGS7H', {
     api_host: 'https://app.posthog.com',
     loaded: (posthog) => {
+      // we only track tokentable.org
       if (process.env.NODE_ENV === 'development') posthog.opt_out_capturing()
       if (window.location.hostname.includes('tokenops')) posthog.opt_out_capturing()
       if (window.location.hostname.includes('vesting')) posthog.opt_out_capturing()

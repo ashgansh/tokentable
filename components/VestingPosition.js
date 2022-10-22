@@ -90,7 +90,7 @@ const VestingPosition = ({ grant, chainId, releaseAndWithdraw, getReleasableAmou
       toast.loading(`Claiming your tokens...`, { id: toastId })
       await tx.wait()
       toast.success("Successfully claimed your tokens", { id: toastId })
-      record("Some vested amount was claimed")
+      record('vestingClaimed', { message: "Some vested amount was claimed" })
       handleRefreshReleasableAmount()
     } catch (e) {
       console.error(e)

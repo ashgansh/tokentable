@@ -279,7 +279,7 @@ const AddScheduleModal = ({
 
     if (!success) return;
 
-    record('A vesting schedule was added');
+    record('createVesting_standard', {message: 'A vesting schedule was added'});
     onClose();
     onSuccess();
     reset();

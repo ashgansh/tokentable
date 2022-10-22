@@ -47,7 +47,8 @@ export const NoPortfolioItems = () => {
     const chainId = await findVestingContractChainId(data.vestingContract);
     const isIndexed = !!chainId;
 
-    record(`Someone looked up a vesting contract. (${data.vestingContract}) (${isIndexed ? "supported" : "not supported"})`)
+
+    record('vestingLookup', { message: `Someone looked up a vesting contract. (${data.vestingContract}) (${isIndexed ? "supported" : "not supported"})` })
 
     if (isIndexed) {
       const details = await getVestingContractDetails(

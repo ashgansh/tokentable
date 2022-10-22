@@ -130,7 +130,7 @@ const BookmarkButton = ({ contractAddress, chainId }) => {
   };
 
   const handleClickBookmark = () => {
-    record("The bookmark button was clicked");
+    record('bookmarkClicked', { message: "The bookmark button was clicked" })
     isBookmarked ? handleRemovePorfolioItem() : handleAddPortfolioItem();
   };
 
