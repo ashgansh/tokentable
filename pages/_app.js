@@ -9,6 +9,7 @@ import { RainbowKitSiweNextAuthProvider } from "@rainbow-me/rainbowkit-siwe-next
 import { useAutoConnectSafe, wagmiClient, chains } from "@/lib/wagmi";
 import PlausibleProvider from "next-plausible";
 import { Fragment } from "react";
+import { usePostHog } from "next-use-posthog";
 
 const AutoConnectSafe = ({ children }) => {
   useAutoConnectSafe();
@@ -21,6 +22,15 @@ const RainbowKitAuthenticationProvider = RAINBOWKIT_AUTH_ENABLED
   : Fragment;
 
 function MyApp({ Component, pageProps }) {
+  usePostHog('phc_VSkCZnXOSrwzLGrJXjV3AfjZ2wmiCtDKEMLuiTMGS7H', {
+    api_host: 'https://app.posthog.com',
+    loaded: (posthog) => {
+      if (process.env.NODE_ENV === 'development') posthog.opt_out_capturing()
+      if (window.location.hostname.includes('tokenops')) posthog.opt_out_capturing()
+      if (window.location.hostname.includes('vesting')) posthog.opt_out_capturing()
+    },
+  })
+
   return (
     <PlausibleProvider domain="tokentable.org">
       <WagmiConfig client={wagmiClient}>
