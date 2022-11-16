@@ -59,7 +59,7 @@ export const NoPortfolioItems = () => {
       return;
     }
 
-    await axios.post("https://formspree.io/f/xaykqkok", data);
+    await axios.post("https://formspree.io/f/maykagbz", data);
     setShowIndexing(true);
     reset();
   };
