@@ -7,7 +7,6 @@ import { Toaster } from "react-hot-toast";
 import { lightTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { RainbowKitSiweNextAuthProvider } from "@rainbow-me/rainbowkit-siwe-next-auth";
 import { useAutoConnectSafe, wagmiClient, chains } from "@/lib/wagmi";
-import PlausibleProvider from "next-plausible";
 import { Fragment } from "react";
 import { usePostHog } from "next-use-posthog";
 
@@ -33,7 +32,6 @@ function MyApp({ Component, pageProps }) {
   })
 
   return (
-    <PlausibleProvider domain="tokentable.org">
       <WagmiConfig client={wagmiClient}>
         <AutoConnectSafe>
           <SessionProvider refetchInterval={0} session={pageProps.session}>
@@ -49,7 +47,6 @@ function MyApp({ Component, pageProps }) {
           </SessionProvider>
         </AutoConnectSafe>
       </WagmiConfig>
-    </PlausibleProvider>
   );
 }
 
